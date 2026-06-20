@@ -25,8 +25,8 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (authenticated === null) {
     return (
-      <div className="min-h-screen bg-dark flex items-center justify-center">
-        <div className="text-gray-400">加载中...</div>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-muted">加载中...</div>
       </div>
     )
   }

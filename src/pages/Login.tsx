@@ -25,7 +25,7 @@ export default function Login() {
           password,
         })
         if (error) throw error
-        window.location.href = '/record'
+        window.location.href = '/driverflow/'
       } else {
         const { error } = await supabase.auth.signUp({
           email,
