@@ -45,6 +45,14 @@ create policy "Users can view their own profile"
 create policy "Users can insert their own profile"
   on profiles for insert
   with check (auth.uid() = id);
+
+create policy "Users can update their own profile"
+  on profiles for update
+  using (auth.uid() = id);
+
+create policy "Users can delete their own profile"
+  on profiles for delete
+  using (auth.uid() = id);
 ```
 
 ## 3. 更新代码中的配置
