@@ -1,10 +1,12 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
 import Card from '../components/ui/Card'
 
 export default function Login() {
+  const navigate = useNavigate()
   const [isLogin, setIsLogin] = useState(true)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -25,7 +27,7 @@ export default function Login() {
           password,
         })
         if (error) throw error
-        window.location.href = '/driverflow/'
+        navigate('/', { replace: true })
       } else {
         const { error } = await supabase.auth.signUp({
           email,
