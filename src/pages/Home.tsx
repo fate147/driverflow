@@ -26,7 +26,7 @@ function calculateDailySummary(date: string, records: Record[]): DailySummary {
   const totalIncome = dayRecords.reduce((sum, r) => sum + r.income, 0)
   const totalHours = dayRecords.reduce((sum, r) => sum + calculateHours(r.start_time, r.end_time), 0)
   const totalRepairFee = dayRecords.reduce((sum, r) => sum + r.repair_fee, 0)
-  const avgHourlyRate = totalHours > 0 ? Math.round((totalIncome / totalHours) * 100) / 100 : 0
+  const avgHourlyRate = totalHours > 0 ? Math.round(((totalIncome - totalRepairFee) / totalHours) * 100) / 100 : 0
 
   return {
     date,

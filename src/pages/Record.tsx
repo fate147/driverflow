@@ -43,7 +43,9 @@ export default function RecordPage() {
     ? calculateHours(form.start_time, form.end_time)
     : 0
   const incomeNum = parseFloat(form.income) || 0
-  const hourlyRate = hours > 0 ? Math.round((incomeNum / hours) * 100) / 100 : 0
+  const repairNum = parseFloat(form.repair_fee) || 0
+  const netIncome = incomeNum - repairNum
+  const hourlyRate = hours > 0 ? Math.round((netIncome / hours) * 100) / 100 : 0
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

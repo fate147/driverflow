@@ -7,8 +7,9 @@ export function calculateHours(start: string, end: string): number {
   const [eh, em] = end.split(':').map(Number)
   const startMinutes = sh * 60 + sm
   const endMinutes = eh * 60 + em
-  const diff = endMinutes - startMinutes
-  return diff > 0 ? diff / 60 : 0
+  let diff = endMinutes - startMinutes
+  if (diff <= 0) diff += 24 * 60
+  return diff / 60
 }
 
 export function useRecords() {
@@ -50,7 +51,8 @@ export function useRecords() {
       if (!user) throw new Error('Not authenticated')
 
       const hours = calculateHours(record.start_time, record.end_time)
-      const hourlyRate = hours > 0 ? Math.round((record.income / hours) * 100) / 100 : 0
+      const netIncome = record.income - (record.repair_fee || 0)
+      const hourlyRate = hours > 0 ? Math.round((netIncome / hours) * 100) / 100 : 0
 
       const newRecord = {
         ...record,

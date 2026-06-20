@@ -49,7 +49,7 @@ export default function Stats() {
     const totalIncome = filteredRecords.reduce((s, r) => s + r.income, 0)
     const totalHours = filteredRecords.reduce((s, r) => s + calculateHours(r.start_time, r.end_time), 0)
     const totalRepairFee = filteredRecords.reduce((s, r) => s + r.repair_fee, 0)
-    const avgHourlyRate = totalHours > 0 ? Math.round((totalIncome / totalHours) * 100) / 100 : 0
+    const avgHourlyRate = totalHours > 0 ? Math.round(((totalIncome - totalRepairFee) / totalHours) * 100) / 100 : 0
     return { totalIncome, totalHours, totalRepairFee, avgHourlyRate }
   }, [filteredRecords])
 
