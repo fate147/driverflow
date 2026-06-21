@@ -108,17 +108,17 @@ export default function RecordPage() {
 
   return (
     <Layout>
-      <div className="max-w-xl mx-auto space-y-6">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+      <div className="max-w-xl mx-auto space-y-4 md:space-y-6">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="h-9 w-9">
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <h2 className="text-2xl font-bold">{isEdit ? '编辑记录' : '新增记录'}</h2>
+          <h2 className="text-xl md:text-2xl font-bold">{isEdit ? '编辑记录' : '新增记录'}</h2>
         </div>
 
         <Card>
-          <CardHeader>
-            <CardTitle>{isEdit ? '修改记录信息' : '填写今日数据'}</CardTitle>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm md:text-base">{isEdit ? '修改记录信息' : '填写今日数据'}</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -130,53 +130,40 @@ export default function RecordPage() {
                 <Label>流水 (元)</Label>
                 <Input type="number" step="0.01" min="0" placeholder="请输入今日流水" value={form.income} onChange={(e) => handleChange('income', e.target.value)} required />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label>出车时间</Label>
-                    <button type="button" onClick={() => { setForm(prev => ({ ...prev, start_time: '07:30' })) }} className="text-xs text-muted-foreground hover:text-foreground transition-colors">默认 7:30</button>
+                    <Label className="text-xs sm:text-sm">出车时间</Label>
+                    <button type="button" onClick={() => setForm(prev => ({ ...prev, start_time: '07:30' }))} className="text-[10px] sm:text-xs text-muted-foreground hover:text-foreground transition-colors">默认</button>
                   </div>
-                  <Input type="text" placeholder="如 7:30" value={form.start_time} onChange={(e) => handleChange('start_time', e.target.value)} onBlur={(e) => handleTimeBlur('start_time', e.target.value)} required />
+                  <Input type="text" placeholder="7:30" value={form.start_time} onChange={(e) => handleChange('start_time', e.target.value)} onBlur={(e) => handleTimeBlur('start_time', e.target.value)} required />
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label>收车时间</Label>
-                    <button type="button" onClick={() => { setForm(prev => ({ ...prev, end_time: '18:00' })) }} className="text-xs text-muted-foreground hover:text-foreground transition-colors">默认 18:00</button>
+                    <Label className="text-xs sm:text-sm">收车时间</Label>
+                    <button type="button" onClick={() => setForm(prev => ({ ...prev, end_time: '18:00' }))} className="text-[10px] sm:text-xs text-muted-foreground hover:text-foreground transition-colors">默认</button>
                   </div>
-                  <Input type="text" placeholder="如 18:00" value={form.end_time} onChange={(e) => handleChange('end_time', e.target.value)} onBlur={(e) => handleTimeBlur('end_time', e.target.value)} required />
+                  <Input type="text" placeholder="18:00" value={form.end_time} onChange={(e) => handleChange('end_time', e.target.value)} onBlur={(e) => handleTimeBlur('end_time', e.target.value)} required />
                 </div>
               </div>
-              <p className="text-xs text-muted-foreground">支持格式：7:30、07:30、7.30、07.30</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">支持格式：7:30、07:30、7.30</p>
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label>跑车区域</Label>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedDistricts(prev => prev.length === DISTRICTS.length ? [] : [...DISTRICTS])}
-                    className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-                  >
+                  <Label className="text-xs sm:text-sm">跑车区域</Label>
+                  <button type="button" onClick={() => setSelectedDistricts(prev => prev.length === DISTRICTS.length ? [] : [...DISTRICTS])} className="text-[10px] sm:text-xs text-muted-foreground hover:text-foreground transition-colors">
                     {selectedDistricts.length === DISTRICTS.length ? '取消全选' : '全选'}
                   </button>
                 </div>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5 sm:gap-2">
                   {DISTRICTS.map(district => (
-                    <button
-                      key={district}
-                      type="button"
-                      onClick={() => toggleDistrict(district)}
-                      className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                        selectedDistricts.includes(district)
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                      }`}
-                    >
+                    <button key={district} type="button" onClick={() => toggleDistrict(district)} className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded text-xs sm:text-sm font-medium transition-colors ${selectedDistricts.includes(district) ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
                       {district}
                     </button>
                   ))}
                 </div>
                 {selectedDistricts.length > 0 && (
-                  <p className="text-xs text-muted-foreground">已选：{selectedDistricts.join('、')}</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">已选：{selectedDistricts.join('、')}</p>
                 )}
               </div>
 
@@ -186,12 +173,12 @@ export default function RecordPage() {
               </div>
 
               {(form.start_time && form.end_time) && hours > 0 && (
-                <div className="p-4 rounded-lg bg-muted space-y-2">
-                  <div className="flex justify-between text-sm">
+                <div className="p-3 sm:p-4 rounded-lg bg-muted space-y-2">
+                  <div className="flex justify-between text-xs sm:text-sm">
                     <span className="text-muted-foreground">出车时长</span>
                     <span className="font-medium">{hours.toFixed(1)} 小时</span>
                   </div>
-                  <div className="flex justify-between text-sm">
+                  <div className="flex justify-between text-xs sm:text-sm">
                     <span className="text-muted-foreground">时薪</span>
                     <span className="font-medium">¥{hourlyRate.toFixed(2)} / 小时</span>
                   </div>

@@ -34,13 +34,15 @@ export default function Home() {
 
   return (
     <Layout>
-      <div className="space-y-6">
+      <div className="space-y-4 md:space-y-6">
         <Card>
-          <CardHeader><CardTitle>30天流水趋势</CardTitle></CardHeader>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm md:text-base">30天流水趋势</CardTitle>
+          </CardHeader>
           <CardContent>
             {monthlyChartData.some(d => d.income > 0) ? (
-              <ResponsiveContainer width="100%" height={200}>
-                <AreaChart data={monthlyChartData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+              <ResponsiveContainer width="100%" height={180}>
+                <AreaChart data={monthlyChartData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
                   <defs>
                     <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
@@ -48,14 +50,14 @@ export default function Home() {
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="oklch(1 0 0 / 10%)" />
-                  <XAxis dataKey="date" stroke="oklch(0.708 0 0)" tick={{ fill: 'oklch(0.708 0 0)', fontSize: 10 }} />
-                  <YAxis stroke="oklch(0.708 0 0)" tick={{ fill: 'oklch(0.708 0 0)', fontSize: 10 }} />
-                  <Tooltip contentStyle={{ backgroundColor: 'oklch(0.205 0 0)', border: '1px solid oklch(1 0 0 / 10%)', borderRadius: '8px', color: 'oklch(0.985 0 0)' }} />
+                  <XAxis dataKey="date" stroke="oklch(0.708 0 0)" tick={{ fill: 'oklch(0.708 0 0)', fontSize: 10 }} interval="preserveStartEnd" />
+                  <YAxis stroke="oklch(0.708 0 0)" tick={{ fill: 'oklch(0.708 0 0)', fontSize: 10 }} width={50} />
+                  <Tooltip contentStyle={{ backgroundColor: 'oklch(0.205 0 0)', border: '1px solid oklch(1 0 0 / 10%)', borderRadius: '8px', color: 'oklch(0.985 0 0)', fontSize: '12px' }} />
                   <Area type="monotone" dataKey="income" stroke="#3b82f6" strokeWidth={2} fill="url(#colorIncome)" />
                 </AreaChart>
               </ResponsiveContainer>
             ) : (
-              <p className="text-center text-muted-foreground py-8">暂无数据</p>
+              <p className="text-center text-muted-foreground py-8 text-sm">暂无数据</p>
             )}
           </CardContent>
         </Card>

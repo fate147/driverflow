@@ -38,52 +38,36 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
-      <div className="w-full max-w-md space-y-6">
-        <div className="text-center space-y-2">
-          <h1 className="text-4xl font-bold">DriverFlow</h1>
-          <p className="text-muted-foreground">司机流水宝 - 让数据驱动收入</p>
+    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-8">
+      <div className="w-full max-w-sm sm:max-w-md space-y-4 sm:space-y-6">
+        <div className="text-center space-y-1 sm:space-y-2">
+          <h1 className="text-3xl sm:text-4xl font-bold">DriverFlow</h1>
+          <p className="text-muted-foreground text-sm">司机流水宝 - 让数据驱动收入</p>
         </div>
 
         <Card>
-          <CardHeader>
-            <CardTitle>{isLogin ? '登录' : '注册'}</CardTitle>
-            <CardDescription>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base md:text-lg">{isLogin ? '登录' : '注册'}</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">
               {isLogin ? '请输入您的账号信息' : '创建一个新账号'}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
               <div className="space-y-2">
-                <Label>邮箱</Label>
-                <Input
-                  type="email"
-                  placeholder="请输入邮箱"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
+                <Label className="text-xs sm:text-sm">邮箱</Label>
+                <Input type="email" placeholder="请输入邮箱" value={email} onChange={(e) => setEmail(e.target.value)} required />
               </div>
               <div className="space-y-2">
-                <Label>密码</Label>
-                <Input
-                  type="password"
-                  placeholder="请输入密码"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
+                <Label className="text-xs sm:text-sm">密码</Label>
+                <Input type="password" placeholder="请输入密码" value={password} onChange={(e) => setPassword(e.target.value)} required />
               </div>
 
               {error && (
-                <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
-                  {error}
-                </div>
+                <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-xs sm:text-sm">{error}</div>
               )}
               {message && (
-                <div className="p-3 rounded-lg bg-muted text-foreground text-sm">
-                  {message}
-                </div>
+                <div className="p-3 rounded-lg bg-muted text-foreground text-xs sm:text-sm">{message}</div>
               )}
 
               <Button type="submit" className="w-full" disabled={loading}>
@@ -92,11 +76,7 @@ export default function Login() {
             </form>
 
             <div className="mt-4 text-center">
-              <button
-                type="button"
-                onClick={() => { setIsLogin(!isLogin); setError(''); setMessage('') }}
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
+              <button type="button" onClick={() => { setIsLogin(!isLogin); setError(''); setMessage('') }} className="text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors">
                 {isLogin ? '还没有账号？立即注册' : '已有账号？立即登录'}
               </button>
             </div>

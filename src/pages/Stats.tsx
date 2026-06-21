@@ -25,7 +25,7 @@ export default function Stats() {
       const targetDate = addWeeks(baseDate, offset)
       start = startOfWeek(targetDate, { weekStartsOn: 1 })
       end = endOfWeek(targetDate, { weekStartsOn: 1 })
-      label = `${format(start, 'M月d日')} - ${format(end, 'M月d日')}`
+      label = `${format(start, 'M/d')} - ${format(end, 'M/d')}`
     } else if (period === 'month') {
       const targetDate = addMonths(baseDate, offset)
       start = startOfMonth(targetDate)
@@ -34,7 +34,7 @@ export default function Stats() {
     } else {
       start = new Date(0)
       end = new Date(8640000000000000)
-      label = '全部记录'
+      label = '全部'
     }
     return { startDate: start, endDate: end, periodLabel: label }
   }, [period, offset])
@@ -115,126 +115,136 @@ export default function Stats() {
 
   return (
     <Layout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
+      <div className="space-y-4 md:space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div>
-            <h2 className="text-2xl font-bold">数据统计</h2>
-            <p className="text-muted-foreground text-sm">查看收入数据分析</p>
+            <h2 className="text-xl md:text-2xl font-bold">数据统计</h2>
+            <p className="text-muted-foreground text-xs md:text-sm">查看收入数据分析</p>
           </div>
           {period !== 'all' && (
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" onClick={() => navigatePeriod('prev')}>
+              <Button variant="ghost" size="icon" onClick={() => navigatePeriod('prev')} className="h-8 w-8">
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <span className="text-sm font-medium min-w-[120px] text-center">{periodLabel}</span>
-              <Button variant="ghost" size="icon" onClick={() => navigatePeriod('next')}>
+              <span className="text-xs sm:text-sm font-medium min-w-[100px] text-center">{periodLabel}</span>
+              <Button variant="ghost" size="icon" onClick={() => navigatePeriod('next')} className="h-8 w-8">
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
           )}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
           {(['week', 'month', 'all'] as const).map(p => (
-            <Button key={p} variant={period === p ? 'default' : 'outline'} size="sm" onClick={() => handlePeriodChange(p)}>
+            <Button key={p} variant={period === p ? 'default' : 'outline'} size="sm" onClick={() => handlePeriodChange(p)} className="text-xs sm:text-sm">
               {p === 'week' ? '周' : p === 'month' ? '月' : '全部'}
             </Button>
           ))}
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">总流水</CardTitle>
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">总流水</CardTitle>
               <Wallet className="h-4 w-4 text-blue-500" />
             </CardHeader>
-            <CardContent><div className="text-2xl font-bold">¥{stats.totalIncome.toFixed(2)}</div></CardContent>
+            <CardContent className="p-3 sm:p-6">
+              <div className="text-lg sm:text-2xl font-bold">¥{stats.totalIncome.toFixed(2)}</div>
+            </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">总时长</CardTitle>
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">总时长</CardTitle>
               <Clock className="h-4 w-4 text-blue-500" />
             </CardHeader>
-            <CardContent><div className="text-2xl font-bold">{stats.totalHours.toFixed(1)}h</div></CardContent>
+            <CardContent className="p-3 sm:p-6">
+              <div className="text-lg sm:text-2xl font-bold">{stats.totalHours.toFixed(1)}h</div>
+            </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">平均时薪</CardTitle>
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">时薪</CardTitle>
               <TrendingUp className="h-4 w-4 text-blue-500" />
             </CardHeader>
-            <CardContent><div className="text-2xl font-bold">¥{stats.avgHourlyRate.toFixed(2)}</div></CardContent>
+            <CardContent className="p-3 sm:p-6">
+              <div className="text-lg sm:text-2xl font-bold">¥{stats.avgHourlyRate.toFixed(2)}</div>
+            </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">修车费</CardTitle>
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">修车费</CardTitle>
               <Wrench className="h-4 w-4 text-blue-500" />
             </CardHeader>
-            <CardContent><div className="text-2xl font-bold">¥{stats.totalRepairFee.toFixed(2)}</div></CardContent>
+            <CardContent className="p-3 sm:p-6">
+              <div className="text-lg sm:text-2xl font-bold">¥{stats.totalRepairFee.toFixed(2)}</div>
+            </CardContent>
           </Card>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
           <Card>
-            <CardHeader><CardTitle>近7天流水</CardTitle></CardHeader>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm md:text-base">近7天流水</CardTitle>
+            </CardHeader>
             <CardContent>
               {weeklyChartData.some(d => d.income > 0) ? (
                 <StatsCharts data={weeklyChartData} type="bar" />
               ) : (
-                <p className="text-center text-muted-foreground py-8">暂无数据</p>
+                <p className="text-center text-muted-foreground py-8 text-sm">暂无数据</p>
               )}
             </CardContent>
           </Card>
           <Card>
-            <CardHeader><CardTitle>近30天趋势</CardTitle></CardHeader>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm md:text-base">近30天趋势</CardTitle>
+            </CardHeader>
             <CardContent>
               {monthlyChartData.some(d => d.income > 0) ? (
                 <StatsCharts data={monthlyChartData} type="area" />
               ) : (
-                <p className="text-center text-muted-foreground py-8">暂无数据</p>
+                <p className="text-center text-muted-foreground py-8 text-sm">暂无数据</p>
               )}
             </CardContent>
           </Card>
         </div>
 
-        {/* 区域统计 */}
         <DistrictChart records={filteredRecords} />
 
         <Card>
-          <CardHeader><CardTitle>每日数据</CardTitle></CardHeader>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm md:text-base">每日数据</CardTitle>
+          </CardHeader>
           <CardContent>
             {dailyData.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">该周期暂无数据</p>
+              <p className="text-center text-muted-foreground py-8 text-sm">该周期暂无数据</p>
             ) : (
               <Accordion>
                 {dailyData.map((day) => (
                   <AccordionItem key={day.date} value={day.date}>
                     <AccordionTrigger>
-                      <div className="flex items-center justify-between w-full">
-                        <span className="font-medium">{day.displayDate}</span>
-                        <div className="flex items-center gap-3">
-                          <span className="font-medium">¥{day.income.toFixed(2)}</span>
-                          <span className="text-muted-foreground text-sm">{day.records.length}条</span>
+                      <div className="flex items-center justify-between w-full gap-2">
+                        <span className="font-medium text-sm">{day.displayDate}</span>
+                        <div className="flex items-center gap-2 sm:gap-3">
+                          <span className="font-medium text-sm">¥{day.income.toFixed(2)}</span>
+                          <span className="text-muted-foreground text-xs">{day.records.length}条</span>
                         </div>
                       </div>
                     </AccordionTrigger>
                     <AccordionContent>
                       <div className="space-y-3">
-                        <div className="grid grid-cols-3 gap-4 text-sm">
+                        <div className="grid grid-cols-3 gap-2 sm:gap-4 text-xs sm:text-sm">
                           <div><p className="text-muted-foreground">时长</p><p className="font-medium">{day.hours.toFixed(1)}h</p></div>
                           <div><p className="text-muted-foreground">时薪</p><p className="font-medium">¥{day.hourlyRate.toFixed(2)}</p></div>
                           <div><p className="text-muted-foreground">修车费</p><p className="font-medium">¥{day.repairFee.toFixed(2)}</p></div>
                         </div>
-                        <div className="space-y-2">
+                        <div className="space-y-1.5">
                           {day.records.map((record: any) => (
-                            <div key={record.id} className="flex items-center justify-between p-2 rounded-lg bg-muted">
-                              <div className="flex items-center gap-3">
-                                <span className="text-xs text-muted-foreground">{record.start_time} - {record.end_time}</span>
-                                <span className="text-sm">¥{record.income.toFixed(2)}</span>
-                                {record.districts && record.districts.length > 0 && (
-                                  <span className="text-xs text-muted-foreground">({record.districts.join('、')})</span>
-                                )}
+                            <div key={record.id} className="flex items-center justify-between p-2 rounded bg-muted gap-2">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span className="text-xs text-muted-foreground whitespace-nowrap">{record.start_time}-{record.end_time}</span>
+                                <span className="text-xs sm:text-sm font-medium">¥{record.income.toFixed(2)}</span>
                               </div>
-                              <Button variant="ghost" size="icon" onClick={() => navigate(`/record/${record.id}`)} className="h-7 w-7">
+                              <Button variant="ghost" size="icon" onClick={() => navigate(`/record/${record.id}`)} className="h-6 w-6 flex-shrink-0">
                                 <Edit className="h-3 w-3" />
                               </Button>
                             </div>
@@ -249,31 +259,30 @@ export default function Stats() {
           </CardContent>
         </Card>
 
-        {/* 修车记录 */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm md:text-base flex items-center gap-2">
               <Wrench className="h-4 w-4" />
               修车记录
             </CardTitle>
           </CardHeader>
           <CardContent>
             {filteredRecords.filter(r => r.repair_fee > 0).length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">该周期暂无修车记录</p>
+              <p className="text-center text-muted-foreground py-8 text-sm">该周期暂无修车记录</p>
             ) : (
               <div className="space-y-2">
                 {filteredRecords
                   .filter(r => r.repair_fee > 0)
                   .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
                   .map(record => (
-                    <div key={record.id} className="flex items-center justify-between p-3 rounded-lg bg-muted">
-                      <div>
-                        <p className="font-medium">{format(new Date(record.date), 'MM月dd日')}</p>
-                        <p className="text-xs text-muted-foreground">
+                    <div key={record.id} className="flex items-center justify-between p-2.5 sm:p-3 rounded-lg bg-muted gap-2">
+                      <div className="min-w-0">
+                        <p className="font-medium text-sm">{format(new Date(record.date), 'MM月dd日')}</p>
+                        <p className="text-xs text-muted-foreground truncate">
                           {record.districts && record.districts.length > 0 ? record.districts.join('、') : '未选区域'}
                         </p>
                       </div>
-                      <p className="font-medium text-destructive">¥{record.repair_fee.toFixed(2)}</p>
+                      <p className="font-medium text-destructive text-sm flex-shrink-0">¥{record.repair_fee.toFixed(2)}</p>
                     </div>
                   ))}
               </div>

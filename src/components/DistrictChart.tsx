@@ -77,14 +77,7 @@ export default function DistrictChart({ records }: DistrictChartProps) {
                 ticks={[0, 5, 10, 15, 20, 25, 30]}
                 tickFormatter={(value) => `${value}天`}
               />
-              <ChartTooltip
-                content={
-                  <ChartTooltipContent
-                    indicator="dot"
-                    formatter={(value) => [`${value}天`, '出车天数']}
-                  />
-                }
-              />
+              <ChartTooltip content={<ChartTooltipContent />} />
               <Bar dataKey="days" radius={[0, 4, 4, 0]}>
                 {chartData.map((entry) => (
                   <Cell key={entry.district} fill={getColorByValue(entry.days, maxDays)} />
