@@ -1,7 +1,7 @@
 import { ReactNode } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { Home, Plus, BarChart3, LogOut } from 'lucide-react'
-import { supabase } from '../../lib/supabase'
+import { Home, Plus, BarChart3 } from 'lucide-react'
+import { cn } from '../../lib/utils'
 
 interface LayoutProps {
   children: ReactNode
@@ -10,11 +10,6 @@ interface LayoutProps {
 export default function Layout({ children }: LayoutProps) {
   const navigate = useNavigate()
   const location = useLocation()
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut()
-    navigate('/login')
-  }
 
   const navItems = [
     { path: '/', label: '首页', icon: Home },
@@ -28,81 +23,41 @@ export default function Layout({ children }: LayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-dark">
-      <div className="flex min-h-screen">
-        {/* Desktop Sidebar */}
-        <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 bg-dark/80 backdrop-blur-xl border-r border-white/10">
-          <div className="flex flex-col flex-grow pt-8 overflow-y-auto">
-            <div className="flex items-center flex-shrink-0 px-6 mb-8">
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                DriverFlow
-              </h1>
-            </div>
-            <nav className="flex-1 px-4 space-y-2">
-              {navItems.map(item => {
-                const Icon = item.icon
-                return (
-                  <button
-                    key={item.path}
-                    onClick={() => navigate(item.path)}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
-                      isActive(item.path)
-                        ? 'bg-white/10 text-primary'
-                        : 'text-gray-400 hover:text-white hover:bg-white/5'
-                    }`}
-                  >
-                    <Icon className="w-5 h-5" />
-                    <span className="font-medium">{item.label}</span>
-                  </button>
-                )
-              })}
-            </nav>
-            <div className="px-4 pb-8">
-              <button
-                onClick={handleLogout}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:text-red-400 hover:bg-white/5 transition-all duration-200"
-              >
-                <LogOut className="w-5 h-5" />
-                <span className="font-medium">退出</span>
-              </button>
-            </div>
+    <div className="min-h-screen bg-background p-4 md:p-8 flex items-center justify-center">
+      <div className="relative w-full max-w-5xl z-10">
+        <div className="bg-card rounded-2xl shadow-xl min-h-[80vh] flex flex-col">
+          <div className="flex items-center justify-between px-6 py-4 border-b">
+            <h1 className="text-lg font-bold text-card-foreground">DriverFlow</h1>
+            <span className="text-xs text-muted-foreground font-medium">在线</span>
           </div>
-        </aside>
+          <div className="p-6 flex-1">
+            {children}
+          </div>
+        </div>
 
-        {/* Mobile Bottom Navigation */}
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-dark/80 backdrop-blur-xl border-t border-white/10">
-          <div className="flex justify-around items-center py-3">
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50">
+          <div className="bg-card border rounded-full px-2 py-2 flex items-center gap-1 shadow-xl">
             {navItems.map(item => {
               const Icon = item.icon
+              const active = isActive(item.path)
               return (
                 <button
                   key={item.path}
                   onClick={() => navigate(item.path)}
-                  className={`flex flex-col items-center gap-1 px-3 py-1 rounded-lg transition-all duration-200 ${
-                    isActive(item.path) ? 'text-primary' : 'text-gray-400'
-                  }`}
+                  className={cn(
+                    "flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium transition-colors",
+                    active
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  )}
                 >
-                  <Icon className="w-5 h-5" />
-                  <span className="text-xs font-medium">{item.label}</span>
+                  <Icon className="h-4 w-4" />
+                  {item.label}
                 </button>
               )
             })}
-            <button
-              onClick={handleLogout}
-              className="flex flex-col items-center gap-1 px-3 py-1 rounded-lg text-gray-400 transition-all duration-200"
-            >
-              <LogOut className="w-5 h-5" />
-              <span className="text-xs font-medium">退出</span>
-            </button>
           </div>
-        </nav>
-
-        {/* Main Content */}
-        <main className="md:ml-64 flex-1 pb-24 md:pb-8">
-          <div className="p-4 md:p-8 max-w-6xl mx-auto">
-            {children}
-          </div>
-        </main>
+        </div>
       </div>
     </div>
   )

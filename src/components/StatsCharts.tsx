@@ -1,50 +1,55 @@
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
+import { BarChart, Bar, AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 
 interface ChartData {
   date: string
   income: number
-  hourlyRate: number
+  hourlyRate?: number
 }
 
 interface StatsChartsProps {
   data: ChartData[]
+  type?: 'bar' | 'area'
 }
 
-export default function StatsCharts({ data }: StatsChartsProps) {
+export default function StatsCharts({ data, type = 'bar' }: StatsChartsProps) {
+  const tooltipStyle = {
+    contentStyle: {
+      backgroundColor: 'oklch(0.205 0 0)',
+      border: '1px solid oklch(1 0 0 / 10%)',
+      borderRadius: '8px',
+      color: 'oklch(0.985 0 0)'
+    }
+  }
+
+  if (type === 'area') {
+    return (
+      <ResponsiveContainer width="100%" height={200}>
+        <AreaChart data={data} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+          <defs>
+            <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+              <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" stroke="oklch(1 0 0 / 10%)" />
+          <XAxis dataKey="date" stroke="oklch(0.708 0 0)" tick={{ fill: 'oklch(0.708 0 0)', fontSize: 12 }} />
+          <YAxis stroke="oklch(0.708 0 0)" tick={{ fill: 'oklch(0.708 0 0)', fontSize: 12 }} />
+          <Tooltip {...tooltipStyle} />
+          <Area type="monotone" dataKey="income" stroke="#3b82f6" strokeWidth={2} fill="url(#colorIncome)" />
+        </AreaChart>
+      </ResponsiveContainer>
+    )
+  }
+
   return (
-    <div className="space-y-8">
-      <div>
-        <h3 className="text-sm font-medium text-gray-400 mb-4">每日流水趋势</h3>
-        <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={data}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-            <XAxis dataKey="date" stroke="#999" tick={{ fill: '#999', fontSize: 12 }} />
-            <YAxis stroke="#999" tick={{ fill: '#999', fontSize: 12 }} />
-            <Tooltip
-              contentStyle={{ backgroundColor: '#1a1a2e', border: '1px solid #333', borderRadius: '8px' }}
-              labelStyle={{ color: '#fff' }}
-              itemStyle={{ color: '#fff' }}
-            />
-            <Line type="monotone" dataKey="income" stroke="#667eea" strokeWidth={2} dot={{ fill: '#667eea', r: 4 }} />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
-      <div>
-        <h3 className="text-sm font-medium text-gray-400 mb-4">时薪变化趋势</h3>
-        <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={data}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-            <XAxis dataKey="date" stroke="#999" tick={{ fill: '#999', fontSize: 12 }} />
-            <YAxis stroke="#999" tick={{ fill: '#999', fontSize: 12 }} />
-            <Tooltip
-              contentStyle={{ backgroundColor: '#1a1a2e', border: '1px solid #333', borderRadius: '8px' }}
-              labelStyle={{ color: '#fff' }}
-              itemStyle={{ color: '#fff' }}
-            />
-            <Line type="monotone" dataKey="hourlyRate" stroke="#3fb950" strokeWidth={2} dot={{ fill: '#3fb950', r: 4 }} />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
-    </div>
+    <ResponsiveContainer width="100%" height={200}>
+      <BarChart data={data} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke="oklch(1 0 0 / 10%)" />
+        <XAxis dataKey="date" stroke="oklch(0.708 0 0)" tick={{ fill: 'oklch(0.708 0 0)', fontSize: 12 }} />
+        <YAxis stroke="oklch(0.708 0 0)" tick={{ fill: 'oklch(0.708 0 0)', fontSize: 12 }} />
+        <Tooltip {...tooltipStyle} />
+        <Bar dataKey="income" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+      </BarChart>
+    </ResponsiveContainer>
   )
 }

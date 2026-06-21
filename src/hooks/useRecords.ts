@@ -2,9 +2,37 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { Record } from '../types'
 
+export function normalizeTime(time: string): string {
+  if (!time) return ''
+  
+  let cleaned = time.trim()
+  
+  cleaned = cleaned.replace(/[.\-\/]/g, ':')
+  
+  const parts = cleaned.split(':')
+  if (parts.length === 2) {
+    let hours = parseInt(parts[0], 10)
+    let minutes = parseInt(parts[1], 10)
+    
+    if (isNaN(hours) || isNaN(minutes)) return ''
+    
+    if (hours < 0 || hours > 23) return ''
+    if (minutes < 0 || minutes > 59) minutes = 0
+    
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
+  }
+  
+  return ''
+}
+
 export function calculateHours(start: string, end: string): number {
-  const [sh, sm] = start.split(':').map(Number)
-  const [eh, em] = end.split(':').map(Number)
+  const normalizedStart = normalizeTime(start)
+  const normalizedEnd = normalizeTime(end)
+  
+  if (!normalizedStart || !normalizedEnd) return 0
+  
+  const [sh, sm] = normalizedStart.split(':').map(Number)
+  const [eh, em] = normalizedEnd.split(':').map(Number)
   const startMinutes = sh * 60 + sm
   const endMinutes = eh * 60 + em
   let diff = endMinutes - startMinutes
@@ -77,26 +105,27 @@ export function useRecords() {
 
   async function updateRecord(id: string, updates: Partial<Record>) {
     try {
+      const record = records.find(r => r.id === id)
+      if (!record) throw new Error('Record not found')
+
+      const newStart = updates.start_time ?? record.start_time
+      const newEnd = updates.end_time ?? record.end_time
+      const newIncome = updates.income ?? record.income
+      const newRepairFee = updates.repair_fee ?? record.repair_fee
+      const hours = calculateHours(newStart, newEnd)
+      const netIncome = newIncome - newRepairFee
+      const hourlyRate = hours > 0 ? Math.round((netIncome / hours) * 100) / 100 : 0
+
+      const payload = { ...updates, hourly_rate: hourlyRate }
+
       const { error } = await supabase
         .from('records')
-        .update(updates)
+        .update(payload)
         .eq('id', id)
 
       if (error) throw error
 
-      if (updates.start_time || updates.end_time || updates.income) {
-        const record = records.find(r => r.id === id)
-        if (record) {
-          const newStart = updates.start_time || record.start_time
-          const newEnd = updates.end_time || record.end_time
-          const newIncome = updates.income ?? record.income
-          const hours = calculateHours(newStart, newEnd)
-          const hourlyRate = hours > 0 ? Math.round((newIncome / hours) * 100) / 100 : 0
-          updates.hourly_rate = hourlyRate
-        }
-      }
-
-      setRecords(prev => prev.map(r => r.id === id ? { ...r, ...updates } : r))
+      setRecords(prev => prev.map(r => r.id === id ? { ...r, ...payload } : r))
     } catch (err) {
       console.error('Failed to update record:', err)
       throw err

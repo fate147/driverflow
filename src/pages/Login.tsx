@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import Button from '../components/ui/Button'
-import Input from '../components/ui/Input'
-import Card from '../components/ui/Card'
+import { Button } from '../components/ui/button'
+import { Input } from '../components/ui/input'
+import { Label } from '../components/ui/label'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -19,20 +20,13 @@ export default function Login() {
     setLoading(true)
     setError('')
     setMessage('')
-
     try {
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        })
+        const { error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) throw error
         navigate('/', { replace: true })
       } else {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-        })
+        const { error } = await supabase.auth.signUp({ email, password })
         if (error) throw error
         setMessage('注册成功！请检查邮箱验证。')
       }
@@ -47,52 +41,66 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-md space-y-6">
         <div className="text-center space-y-2">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-            DriverFlow
-          </h1>
-          <p className="text-muted">司机流水宝 - 让数据驱动收入</p>
+          <h1 className="text-4xl font-bold">DriverFlow</h1>
+          <p className="text-muted-foreground">司机流水宝 - 让数据驱动收入</p>
         </div>
 
         <Card>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <Input
-              label="邮箱"
-              type="email"
-              placeholder="请输入邮箱"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-            <Input
-              label="密码"
-              type="password"
-              placeholder="请输入密码"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+          <CardHeader>
+            <CardTitle>{isLogin ? '登录' : '注册'}</CardTitle>
+            <CardDescription>
+              {isLogin ? '请输入您的账号信息' : '创建一个新账号'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label>邮箱</Label>
+                <Input
+                  type="email"
+                  placeholder="请输入邮箱"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>密码</Label>
+                <Input
+                  type="password"
+                  placeholder="请输入密码"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
 
-            {error && <p className="text-danger text-sm">{error}</p>}
-            {message && <p className="text-success text-sm">{message}</p>}
+              {error && (
+                <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+                  {error}
+                </div>
+              )}
+              {message && (
+                <div className="p-3 rounded-lg bg-muted text-foreground text-sm">
+                  {message}
+                </div>
+              )}
 
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? '处理中...' : (isLogin ? '登录' : '注册')}
-            </Button>
-          </form>
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? '处理中...' : (isLogin ? '登录' : '注册')}
+              </Button>
+            </form>
 
-          <div className="mt-4 text-center">
-            <button
-              type="button"
-              onClick={() => {
-                setIsLogin(!isLogin)
-                setError('')
-                setMessage('')
-              }}
-              className="text-sm text-muted hover:text-white transition-colors"
-            >
-              {isLogin ? '还没有账号？立即注册' : '已有账号？立即登录'}
-            </button>
-          </div>
+            <div className="mt-4 text-center">
+              <button
+                type="button"
+                onClick={() => { setIsLogin(!isLogin); setError(''); setMessage('') }}
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {isLogin ? '还没有账号？立即注册' : '已有账号？立即登录'}
+              </button>
+            </div>
+          </CardContent>
         </Card>
       </div>
     </div>

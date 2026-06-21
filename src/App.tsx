@@ -5,6 +5,7 @@ import Login from './pages/Login'
 import Home from './pages/Home'
 import RecordPage from './pages/Record'
 import Stats from './pages/Stats'
+import Repair from './pages/Repair'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const [authenticated, setAuthenticated] = useState<boolean | null>(null)
@@ -71,6 +72,14 @@ function App() {
         element={
           <ProtectedRoute>
             <Stats />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/repair"
+        element={
+          <ProtectedRoute>
+            <Repair />
           </ProtectedRoute>
         }
       />

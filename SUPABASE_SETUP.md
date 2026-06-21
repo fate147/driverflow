@@ -25,6 +25,7 @@ create table records (
   end_time time not null,
   repair_fee decimal(10,2) default 0,
   hourly_rate decimal(10,2),
+  districts jsonb default '[]'::jsonb,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
@@ -55,5 +56,10 @@ create policy "Users can delete their own profile"
   using (auth.uid() = id);
 ```
 
-## 3. 更新代码中的配置
+## 3. 如果已有records表，添加districts字段
+```sql
+alter table records add column districts jsonb default '[]'::jsonb;
+```
+
+## 4. 更新代码中的配置
 在 src/lib/supabase.ts 中替换 YOUR_SUPABASE_URL 和 YOUR_SUPABASE_ANON_KEY 为实际的值。

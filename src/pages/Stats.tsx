@@ -1,24 +1,26 @@
 import { useState, useMemo } from 'react'
-import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addWeeks, addMonths } from 'date-fns'
-import { Calendar, TrendingUp, Clock, Wallet, Wrench, ChevronLeft, ChevronRight } from 'lucide-react'
-import Card from '../components/ui/Card'
+import { useNavigate } from 'react-router-dom'
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addWeeks, addMonths, subDays } from 'date-fns'
+import { TrendingUp, Clock, Wallet, Wrench, ChevronLeft, ChevronRight, Edit } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
+import { Button } from '../components/ui/button'
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '../components/ui/accordion'
 import Layout from '../components/layout/Layout'
+import DistrictChart from '../components/DistrictChart'
 import StatsCharts from '../components/StatsCharts'
 import { useRecords, calculateHours } from '../hooks/useRecords'
 
 type Period = 'week' | 'month' | 'all'
 
 export default function Stats() {
+  const navigate = useNavigate()
   const { records, loading } = useRecords()
-  const [period, setPeriod] = useState<Period>('week')
+  const [period, setPeriod] = useState<Period>('month')
   const [offset, setOffset] = useState(0)
 
   const { startDate, endDate, periodLabel } = useMemo(() => {
     const baseDate = new Date()
-    let start: Date
-    let end: Date
-    let label: string
-
+    let start: Date, end: Date, label: string
     if (period === 'week') {
       const targetDate = addWeeks(baseDate, offset)
       start = startOfWeek(targetDate, { weekStartsOn: 1 })
@@ -34,7 +36,6 @@ export default function Stats() {
       end = new Date(8640000000000000)
       label = '全部记录'
     }
-
     return { startDate: start, endDate: end, periodLabel: label }
   }, [period, offset])
 
@@ -53,42 +54,60 @@ export default function Stats() {
     return { totalIncome, totalHours, totalRepairFee, avgHourlyRate }
   }, [filteredRecords])
 
-  const recordDays = useMemo(() => {
-    const days = new Set(filteredRecords.map(r => r.date))
-    return days.size
-  }, [filteredRecords])
+  const weeklyChartData = useMemo(() => {
+    const allDates = records.map(r => r.date).sort().reverse()
+    if (allDates.length === 0) return []
+    const latestDate = new Date(allDates[0])
+    return Array.from({ length: 7 }, (_, i) => {
+      const date = subDays(latestDate, 6 - i)
+      const dateStr = format(date, 'yyyy-MM-dd')
+      const dayRecords = records.filter(r => r.date === dateStr)
+      return { date: format(date, 'M/d'), income: dayRecords.reduce((sum, r) => sum + r.income, 0) }
+    })
+  }, [records])
 
-  const chartData = useMemo(() => {
-    const grouped = new Map<string, { income: number; hours: number }>()
+  const monthlyChartData = useMemo(() => {
+    const allDates = records.map(r => r.date).sort().reverse()
+    if (allDates.length === 0) return []
+    const latestDate = new Date(allDates[0])
+    return Array.from({ length: 30 }, (_, i) => {
+      const date = subDays(latestDate, 29 - i)
+      const dateStr = format(date, 'yyyy-MM-dd')
+      const dayRecords = records.filter(r => r.date === dateStr)
+      const income = dayRecords.reduce((sum, r) => sum + r.income, 0)
+      const hours = dayRecords.reduce((sum, r) => sum + calculateHours(r.start_time, r.end_time), 0)
+      return { date: format(date, 'M/d'), income, hourlyRate: hours > 0 ? Math.round((income / hours) * 100) / 100 : 0 }
+    })
+  }, [records])
+
+  const dailyData = useMemo(() => {
+    const grouped = new Map<string, { income: number; hours: number; repairFee: number; records: any[] }>()
     for (const r of filteredRecords) {
-      const existing = grouped.get(r.date) || { income: 0, hours: 0 }
+      const existing = grouped.get(r.date) || { income: 0, hours: 0, repairFee: 0, records: [] }
       existing.income += r.income
       existing.hours += calculateHours(r.start_time, r.end_time)
+      existing.repairFee += r.repair_fee
+      existing.records.push(r)
       grouped.set(r.date, existing)
     }
     return Array.from(grouped.entries())
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([date, { income, hours }]) => ({
-        date: format(new Date(date), 'M/d'),
-        income,
-        hourlyRate: hours > 0 ? Math.round((income / hours) * 100) / 100 : 0,
+      .sort(([a], [b]) => b.localeCompare(a))
+      .map(([date, data]) => ({
+        date,
+        displayDate: format(new Date(date), 'MM月dd日'),
+        ...data,
+        hourlyRate: data.hours > 0 ? Math.round((data.income / data.hours) * 100) / 100 : 0,
       }))
   }, [filteredRecords])
 
-  const handlePeriodChange = (newPeriod: Period) => {
-    setPeriod(newPeriod)
-    setOffset(0)
-  }
-
-  const navigate = (direction: 'prev' | 'next') => {
-    setOffset(prev => direction === 'prev' ? prev - 1 : prev + 1)
-  }
+  const handlePeriodChange = (newPeriod: Period) => { setPeriod(newPeriod); setOffset(0) }
+  const navigatePeriod = (direction: 'prev' | 'next') => setOffset(prev => direction === 'prev' ? prev - 1 : prev + 1)
 
   if (loading) {
     return (
       <Layout>
         <div className="flex items-center justify-center h-64">
-          <div className="text-gray-400">加载中...</div>
+          <div className="text-muted-foreground">加载中...</div>
         </div>
       </Layout>
     )
@@ -97,89 +116,170 @@ export default function Stats() {
   return (
     <Layout>
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-white">数据统计</h1>
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold">数据统计</h2>
+            <p className="text-muted-foreground text-sm">查看收入数据分析</p>
+          </div>
+          {period !== 'all' && (
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="icon" onClick={() => navigatePeriod('prev')}>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="text-sm font-medium min-w-[120px] text-center">{periodLabel}</span>
+              <Button variant="ghost" size="icon" onClick={() => navigatePeriod('next')}>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+        </div>
 
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
           {(['week', 'month', 'all'] as const).map(p => (
-            <button
-              key={p}
-              onClick={() => handlePeriodChange(p)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                period === p
-                  ? 'bg-primary text-white'
-                  : 'bg-white/5 text-gray-400 hover:bg-white/10'
-              }`}
-            >
+            <Button key={p} variant={period === p ? 'default' : 'outline'} size="sm" onClick={() => handlePeriodChange(p)}>
               {p === 'week' ? '周' : p === 'month' ? '月' : '全部'}
-            </button>
+            </Button>
           ))}
         </div>
 
-        {period !== 'all' && (
-          <div className="flex items-center justify-between">
-            <button
-              onClick={() => navigate('prev')}
-              className="p-2 rounded-lg hover:bg-white/10 transition-colors"
-            >
-              <ChevronLeft className="w-5 h-5 text-gray-400" />
-            </button>
-            <span className="text-sm text-gray-400">{periodLabel}</span>
-            <button
-              onClick={() => navigate('next')}
-              className="p-2 rounded-lg hover:bg-white/10 transition-colors"
-            >
-              <ChevronRight className="w-5 h-5 text-gray-400" />
-            </button>
-          </div>
-        )}
-
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card className="text-center">
-            <Wallet className="w-5 h-5 text-green-400 mx-auto mb-2" />
-            <p className="text-xs text-gray-400 mb-1">总流水</p>
-            <p className="text-xl font-bold text-green-400">¥{stats.totalIncome.toFixed(2)}</p>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">总流水</CardTitle>
+              <Wallet className="h-4 w-4 text-blue-500" />
+            </CardHeader>
+            <CardContent><div className="text-2xl font-bold">¥{stats.totalIncome.toFixed(2)}</div></CardContent>
           </Card>
-          <Card className="text-center">
-            <Clock className="w-5 h-5 text-blue-400 mx-auto mb-2" />
-            <p className="text-xs text-gray-400 mb-1">总时长</p>
-            <p className="text-xl font-bold text-blue-400">{stats.totalHours.toFixed(1)}h</p>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">总时长</CardTitle>
+              <Clock className="h-4 w-4 text-blue-500" />
+            </CardHeader>
+            <CardContent><div className="text-2xl font-bold">{stats.totalHours.toFixed(1)}h</div></CardContent>
           </Card>
-          <Card className="text-center">
-            <TrendingUp className="w-5 h-5 text-purple-400 mx-auto mb-2" />
-            <p className="text-xs text-gray-400 mb-1">平均时薪</p>
-            <p className="text-xl font-bold text-purple-400">¥{stats.avgHourlyRate.toFixed(2)}</p>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">平均时薪</CardTitle>
+              <TrendingUp className="h-4 w-4 text-blue-500" />
+            </CardHeader>
+            <CardContent><div className="text-2xl font-bold">¥{stats.avgHourlyRate.toFixed(2)}</div></CardContent>
           </Card>
-          <Card className="text-center">
-            <Wrench className="w-5 h-5 text-orange-400 mx-auto mb-2" />
-            <p className="text-xs text-gray-400 mb-1">修车费</p>
-            <p className="text-xl font-bold text-orange-400">¥{stats.totalRepairFee.toFixed(2)}</p>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">修车费</CardTitle>
+              <Wrench className="h-4 w-4 text-blue-500" />
+            </CardHeader>
+            <CardContent><div className="text-2xl font-bold">¥{stats.totalRepairFee.toFixed(2)}</div></CardContent>
           </Card>
         </div>
 
+        <div className="grid gap-4 md:grid-cols-2">
+          <Card>
+            <CardHeader><CardTitle>近7天流水</CardTitle></CardHeader>
+            <CardContent>
+              {weeklyChartData.some(d => d.income > 0) ? (
+                <StatsCharts data={weeklyChartData} type="bar" />
+              ) : (
+                <p className="text-center text-muted-foreground py-8">暂无数据</p>
+              )}
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader><CardTitle>近30天趋势</CardTitle></CardHeader>
+            <CardContent>
+              {monthlyChartData.some(d => d.income > 0) ? (
+                <StatsCharts data={monthlyChartData} type="area" />
+              ) : (
+                <p className="text-center text-muted-foreground py-8">暂无数据</p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* 区域统计 */}
+        <DistrictChart records={filteredRecords} />
+
         <Card>
-          <div className="flex items-center gap-3">
-            <Calendar className="w-5 h-5 text-primary" />
-            <div>
-              <p className="text-xs text-gray-400">统计周期内记录天数</p>
-              <p className="text-lg font-semibold text-white">
-                {recordDays} <span className="text-sm text-gray-400">天</span>
-              </p>
-            </div>
-          </div>
+          <CardHeader><CardTitle>每日数据</CardTitle></CardHeader>
+          <CardContent>
+            {dailyData.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">该周期暂无数据</p>
+            ) : (
+              <Accordion>
+                {dailyData.map((day) => (
+                  <AccordionItem key={day.date} value={day.date}>
+                    <AccordionTrigger>
+                      <div className="flex items-center justify-between w-full">
+                        <span className="font-medium">{day.displayDate}</span>
+                        <div className="flex items-center gap-3">
+                          <span className="font-medium">¥{day.income.toFixed(2)}</span>
+                          <span className="text-muted-foreground text-sm">{day.records.length}条</span>
+                        </div>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-3 gap-4 text-sm">
+                          <div><p className="text-muted-foreground">时长</p><p className="font-medium">{day.hours.toFixed(1)}h</p></div>
+                          <div><p className="text-muted-foreground">时薪</p><p className="font-medium">¥{day.hourlyRate.toFixed(2)}</p></div>
+                          <div><p className="text-muted-foreground">修车费</p><p className="font-medium">¥{day.repairFee.toFixed(2)}</p></div>
+                        </div>
+                        <div className="space-y-2">
+                          {day.records.map((record: any) => (
+                            <div key={record.id} className="flex items-center justify-between p-2 rounded-lg bg-muted">
+                              <div className="flex items-center gap-3">
+                                <span className="text-xs text-muted-foreground">{record.start_time} - {record.end_time}</span>
+                                <span className="text-sm">¥{record.income.toFixed(2)}</span>
+                                {record.districts && record.districts.length > 0 && (
+                                  <span className="text-xs text-muted-foreground">({record.districts.join('、')})</span>
+                                )}
+                              </div>
+                              <Button variant="ghost" size="icon" onClick={() => navigate(`/record/${record.id}`)} className="h-7 w-7">
+                                <Edit className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            )}
+          </CardContent>
         </Card>
 
-        {chartData.length > 0 ? (
-          <Card>
-            <StatsCharts data={chartData} />
-          </Card>
-        ) : (
-          <Card>
-            <div className="flex flex-col items-center justify-center py-12">
-              <Calendar className="w-12 h-12 text-gray-600 mb-4" />
-              <p className="text-gray-500">该周期暂无数据</p>
-            </div>
-          </Card>
-        )}
+        {/* 修车记录 */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Wrench className="h-4 w-4" />
+              修车记录
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {filteredRecords.filter(r => r.repair_fee > 0).length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">该周期暂无修车记录</p>
+            ) : (
+              <div className="space-y-2">
+                {filteredRecords
+                  .filter(r => r.repair_fee > 0)
+                  .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                  .map(record => (
+                    <div key={record.id} className="flex items-center justify-between p-3 rounded-lg bg-muted">
+                      <div>
+                        <p className="font-medium">{format(new Date(record.date), 'MM月dd日')}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {record.districts && record.districts.length > 0 ? record.districts.join('、') : '未选区域'}
+                        </p>
+                      </div>
+                      <p className="font-medium text-destructive">¥{record.repair_fee.toFixed(2)}</p>
+                    </div>
+                  ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </Layout>
   )

@@ -7,6 +7,7 @@ export interface Record {
   end_time: string
   repair_fee: number
   hourly_rate: number
+  districts: string[]
   created_at: string
   updated_at: string
 }
