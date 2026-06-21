@@ -23,20 +23,21 @@ export default function Layout({ children }: LayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-8 flex items-center justify-center">
+    <div className="min-h-screen bg-background p-3 md:p-8 flex items-center justify-center">
       <div className="relative w-full max-w-5xl z-10">
-        <div className="bg-card rounded-2xl shadow-xl min-h-[80vh] flex flex-col">
-          <div className="flex items-center justify-between px-6 py-4 border-b">
-            <h1 className="text-lg font-bold text-card-foreground">DriverFlow</h1>
+        <div className="bg-card rounded-2xl shadow-xl min-h-[85vh] md:min-h-[80vh] flex flex-col">
+          <div className="flex items-center justify-between px-4 py-3 md:px-6 md:py-4 border-b">
+            <h1 className="text-base md:text-lg font-bold text-card-foreground">DriverFlow</h1>
             <span className="text-xs text-muted-foreground font-medium">在线</span>
           </div>
-          <div className="p-6 flex-1">
+          <div className="p-4 md:p-6 flex-1 pb-20 md:pb-6">
             {children}
           </div>
         </div>
 
-        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50">
-          <div className="bg-card border rounded-full px-2 py-2 flex items-center gap-1 shadow-xl">
+        {/* Floating navigation */}
+        <div className="fixed bottom-4 md:bottom-8 left-1/2 -translate-x-1/2 z-50">
+          <div className="bg-card/90 backdrop-blur-md border rounded-full px-1.5 py-1.5 md:px-3 md:py-2 flex items-center gap-0.5 md:gap-1 shadow-xl">
             {navItems.map(item => {
               const Icon = item.icon
               const active = isActive(item.path)
@@ -45,14 +46,15 @@ export default function Layout({ children }: LayoutProps) {
                   key={item.path}
                   onClick={() => navigate(item.path)}
                   className={cn(
-                    "flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium transition-colors",
+                    "flex items-center justify-center rounded-full transition-all duration-200",
+                    "w-11 h-11 md:w-auto md:h-auto md:px-4 md:py-2.5 md:gap-2",
                     active
-                      ? "bg-primary text-primary-foreground"
+                      ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30"
                       : "text-muted-foreground hover:text-foreground hover:bg-muted"
                   )}
                 >
-                  <Icon className="h-4 w-4" />
-                  {item.label}
+                  <Icon className="h-5 w-5 md:h-4 md:w-4" />
+                  <span className="hidden md:inline text-sm font-medium">{item.label}</span>
                 </button>
               )
             })}
