@@ -17,14 +17,15 @@ export default function StatsCharts({ data, type = 'bar' }: StatsChartsProps) {
       backgroundColor: 'oklch(0.205 0 0)',
       border: '1px solid oklch(1 0 0 / 10%)',
       borderRadius: '8px',
-      color: 'oklch(0.985 0 0)'
+      color: 'oklch(0.985 0 0)',
+      fontSize: '12px'
     }
   }
 
   if (type === 'area') {
     return (
-      <ResponsiveContainer width="100%" height={200}>
-        <AreaChart data={data} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+      <ResponsiveContainer width="100%" height={180}>
+        <AreaChart data={data} margin={{ top: 5, right: 0, left: -20, bottom: 5 }}>
           <defs>
             <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
@@ -32,8 +33,8 @@ export default function StatsCharts({ data, type = 'bar' }: StatsChartsProps) {
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="oklch(1 0 0 / 10%)" />
-          <XAxis dataKey="date" stroke="oklch(0.708 0 0)" tick={{ fill: 'oklch(0.708 0 0)', fontSize: 12 }} />
-          <YAxis stroke="oklch(0.708 0 0)" tick={{ fill: 'oklch(0.708 0 0)', fontSize: 12 }} />
+          <XAxis dataKey="date" stroke="oklch(0.708 0 0)" tick={{ fill: 'oklch(0.708 0 0)', fontSize: 10 }} interval="preserveStartEnd" />
+          <YAxis stroke="oklch(0.708 0 0)" tick={{ fill: 'oklch(0.708 0 0)', fontSize: 10 }} width={45} />
           <Tooltip {...tooltipStyle} />
           <Area type="monotone" dataKey="income" stroke="#3b82f6" strokeWidth={2} fill="url(#colorIncome)" />
         </AreaChart>
@@ -42,11 +43,11 @@ export default function StatsCharts({ data, type = 'bar' }: StatsChartsProps) {
   }
 
   return (
-    <ResponsiveContainer width="100%" height={200}>
-      <BarChart data={data} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+    <ResponsiveContainer width="100%" height={180}>
+      <BarChart data={data} margin={{ top: 5, right: 0, left: -20, bottom: 5 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="oklch(1 0 0 / 10%)" />
-        <XAxis dataKey="date" stroke="oklch(0.708 0 0)" tick={{ fill: 'oklch(0.708 0 0)', fontSize: 12 }} />
-        <YAxis stroke="oklch(0.708 0 0)" tick={{ fill: 'oklch(0.708 0 0)', fontSize: 12 }} />
+        <XAxis dataKey="date" stroke="oklch(0.708 0 0)" tick={{ fill: 'oklch(0.708 0 0)', fontSize: 10 }} interval="preserveStartEnd" />
+        <YAxis stroke="oklch(0.708 0 0)" tick={{ fill: 'oklch(0.708 0 0)', fontSize: 10 }} width={45} />
         <Tooltip {...tooltipStyle} />
         <Bar dataKey="income" fill="#3b82f6" radius={[4, 4, 0, 0]} />
       </BarChart>

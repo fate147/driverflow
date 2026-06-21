@@ -1,6 +1,5 @@
 import { useMemo } from 'react'
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Cell } from 'recharts'
-import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from '../components/ui/chart'
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Cell } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { MapPin } from 'lucide-react'
 import { DISTRICTS } from '../lib/constants'
@@ -40,33 +39,32 @@ export default function DistrictChart({ records }: DistrictChartProps) {
     return Math.max(...chartData.map(d => d.days), 1)
   }, [chartData])
 
-  const chartConfig: ChartConfig = {
-    days: {
-      label: '出车天数',
-      color: '#3b82f6',
-    },
-  }
-
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center gap-2 text-sm md:text-base">
           <MapPin className="h-4 w-4" />
           跑车区域统计
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-2 sm:p-4">
         {activeDistricts.length > 0 ? (
-          <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
-            <BarChart accessibilityLayer data={chartData} layout="vertical">
+          <div className="overflow-x-auto">
+            <BarChart
+              data={chartData}
+              layout="vertical"
+              margin={{ top: 5, right: 10, left: 5, bottom: 5 }}
+              width={undefined}
+              height={Math.max(150, chartData.length * 35)}
+            >
               <CartesianGrid horizontal={false} stroke="oklch(1 0 0 / 10%)" />
               <YAxis
                 dataKey="district"
                 type="category"
                 tickLine={false}
                 axisLine={false}
-                tick={{ fill: 'oklch(0.985 0 0)', fontSize: 12 }}
-                width={80}
+                tick={{ fill: 'oklch(0.985 0 0)', fontSize: 11 }}
+                width={65}
               />
               <XAxis
                 type="number"
@@ -75,18 +73,26 @@ export default function DistrictChart({ records }: DistrictChartProps) {
                 tick={{ fill: 'oklch(0.708 0 0)', fontSize: 10 }}
                 domain={[0, 30]}
                 ticks={[0, 5, 10, 15, 20, 25, 30]}
-                tickFormatter={(value) => `${value}天`}
+                tickFormatter={(value) => `${value}`}
               />
-              <ChartTooltip content={<ChartTooltipContent />} />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: 'oklch(0.205 0 0)',
+                  border: '1px solid oklch(1 0 0 / 10%)',
+                  borderRadius: '8px',
+                  color: 'oklch(0.985 0 0)',
+                  fontSize: '12px'
+                }}
+              />
               <Bar dataKey="days" radius={[0, 4, 4, 0]}>
                 {chartData.map((entry) => (
                   <Cell key={entry.district} fill={getColorByValue(entry.days, maxDays)} />
                 ))}
               </Bar>
             </BarChart>
-          </ChartContainer>
+          </div>
         ) : (
-          <p className="text-center text-muted-foreground py-8">暂无区域数据</p>
+          <p className="text-center text-muted-foreground py-8 text-sm">暂无区域数据</p>
         )}
       </CardContent>
     </Card>
