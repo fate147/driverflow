@@ -55,7 +55,7 @@ export default function DistrictChart({ records }: DistrictChartProps) {
               layout="vertical"
               margin={{ top: 5, right: 10, left: 5, bottom: 5 }}
               width={undefined}
-              height={Math.max(150, chartData.length * 35)}
+              height={Math.max(200, chartData.length * 40)}
             >
               <CartesianGrid horizontal={false} stroke="oklch(1 0 0 / 10%)" />
               <YAxis

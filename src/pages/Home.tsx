@@ -41,7 +41,7 @@ export default function Home() {
           </CardHeader>
           <CardContent className="p-2 sm:p-4">
             {monthlyChartData.some(d => d.income > 0) ? (
-              <ResponsiveContainer width="100%" height={180}>
+              <ResponsiveContainer width="100%" height={220}>
                 <AreaChart data={monthlyChartData} margin={{ top: 5, right: 0, left: -20, bottom: 5 }}>
                   <defs>
                     <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">

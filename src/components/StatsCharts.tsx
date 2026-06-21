@@ -24,7 +24,7 @@ export default function StatsCharts({ data, type = 'bar' }: StatsChartsProps) {
 
   if (type === 'area') {
     return (
-      <ResponsiveContainer width="100%" height={180}>
+      <ResponsiveContainer width="100%" height={220}>
         <AreaChart data={data} margin={{ top: 5, right: 0, left: -20, bottom: 5 }}>
           <defs>
             <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
@@ -43,7 +43,7 @@ export default function StatsCharts({ data, type = 'bar' }: StatsChartsProps) {
   }
 
   return (
-    <ResponsiveContainer width="100%" height={180}>
+    <ResponsiveContainer width="100%" height={220}>
       <BarChart data={data} margin={{ top: 5, right: 0, left: -20, bottom: 5 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="oklch(1 0 0 / 10%)" />
         <XAxis dataKey="date" stroke="oklch(0.708 0 0)" tick={{ fill: 'oklch(0.708 0 0)', fontSize: 10 }} interval="preserveStartEnd" />

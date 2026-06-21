@@ -30,7 +30,7 @@ export default function Layout({ children }: LayoutProps) {
             <h1 className="text-base md:text-lg font-bold text-card-foreground">DriverFlow</h1>
             <span className="text-xs text-muted-foreground font-medium">在线</span>
           </div>
-          <div className="p-3 sm:p-4 md:p-6 flex-1 pb-20 md:pb-6">
+          <div className="p-4 sm:p-5 md:p-6 flex-1 pb-20 md:pb-6">
             {children}
           </div>
         </div>
