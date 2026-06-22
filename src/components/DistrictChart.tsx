@@ -1,43 +1,31 @@
 import { useMemo } from 'react'
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Cell } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { MapPin } from 'lucide-react'
 import { DISTRICTS } from '../lib/constants'
-
-const getColorByValue = (days: number, maxDays: number): string => {
-  if (maxDays === 0) return '#3b82f6'
-  const ratio = days / maxDays
-  if (ratio >= 0.8) return '#1d4ed8'
-  if (ratio >= 0.6) return '#2563eb'
-  if (ratio >= 0.4) return '#3b82f6'
-  if (ratio >= 0.2) return '#60a5fa'
-  return '#93c5fd'
-}
+import type { Record } from '../types'
 
 interface DistrictChartProps {
-  records: any[]
+  records: Record[]
 }
 
-export default function DistrictChart({ records }: DistrictChartProps) {
-  const activeDistricts = useMemo(() => {
-    return DISTRICTS.filter(d => records.some(r => r.districts?.includes(d)))
-  }, [records])
+const BAR_COLORS = ['#3b82f6', '#2563eb', '#1d4ed8', '#60a5fa', '#93c5fd', '#bfdbfe', '#3b82f6', '#2563eb', '#1d4ed8', '#60a5fa']
 
+export default function DistrictChart({ records }: DistrictChartProps) {
   const chartData = useMemo(() => {
+    const activeDistricts = DISTRICTS.filter(d => records.some(r => r.districts?.includes(d)))
     if (activeDistricts.length === 0) return []
-    return activeDistricts.map(d => {
+    const data = activeDistricts.map((d, i) => {
       const districtRecords = records.filter(r => r.districts?.includes(d))
       const daySet = new Set(districtRecords.map(r => r.date))
       return {
         district: d,
         days: daySet.size,
+        color: BAR_COLORS[i % BAR_COLORS.length],
       }
     }).sort((a, b) => b.days - a.days)
-  }, [records, activeDistricts])
-
-  const maxDays = useMemo(() => {
-    return Math.max(...chartData.map(d => d.days), 1)
-  }, [chartData])
+    const maxDays = Math.max(...data.map(d => d.days), 1)
+    return data.map(d => ({ ...d, ratio: d.days / maxDays }))
+  }, [records])
 
   return (
     <Card>
@@ -48,48 +36,25 @@ export default function DistrictChart({ records }: DistrictChartProps) {
         </CardTitle>
       </CardHeader>
       <CardContent className="p-2 sm:p-4">
-        {activeDistricts.length > 0 ? (
-          <div className="overflow-x-auto">
-            <BarChart
-              data={chartData}
-              layout="vertical"
-              margin={{ top: 5, right: 10, left: 5, bottom: 5 }}
-              width={undefined}
-              height={Math.max(200, chartData.length * 40)}
-            >
-              <CartesianGrid horizontal={false} stroke="oklch(1 0 0 / 10%)" />
-              <YAxis
-                dataKey="district"
-                type="category"
-                tickLine={false}
-                axisLine={false}
-                tick={{ fill: 'oklch(0.985 0 0)', fontSize: 11 }}
-                width={65}
-              />
-              <XAxis
-                type="number"
-                tickLine={false}
-                axisLine={false}
-                tick={{ fill: 'oklch(0.708 0 0)', fontSize: 10 }}
-                domain={[0, 30]}
-                ticks={[0, 5, 10, 15, 20, 25, 30]}
-                tickFormatter={(value) => `${value}`}
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: 'oklch(0.205 0 0)',
-                  border: '1px solid oklch(1 0 0 / 10%)',
-                  borderRadius: '8px',
-                  color: 'oklch(0.985 0 0)',
-                  fontSize: '12px'
-                }}
-              />
-              <Bar dataKey="days" radius={[0, 4, 4, 0]}>
-                {chartData.map((entry) => (
-                  <Cell key={entry.district} fill={getColorByValue(entry.days, maxDays)} />
-                ))}
-              </Bar>
-            </BarChart>
+        {chartData.length > 0 ? (
+          <div className="space-y-2">
+            {chartData.map((item) => (
+              <div key={item.district} className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground w-16 shrink-0 truncate" title={item.district}>
+                  {item.district}
+                </span>
+                <div className="flex-1 h-5 bg-muted rounded overflow-hidden">
+                  <div
+                    className="h-full rounded transition-all duration-300"
+                    style={{
+                      width: `${Math.max(item.ratio * 100, 4)}%`,
+                      backgroundColor: item.color,
+                    }}
+                  />
+                </div>
+                <span className="text-xs font-medium w-8 text-right shrink-0">{item.days}</span>
+              </div>
+            ))}
           </div>
         ) : (
           <p className="text-center text-muted-foreground py-8 text-sm">暂无区域数据</p>

@@ -1,26 +1,53 @@
 import { useMemo } from 'react'
-import { format, subDays } from 'date-fns'
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
+import { format } from 'date-fns'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import Layout from '../components/layout/Layout'
 import DistrictChart from '../components/DistrictChart'
 import { useRecords } from '../hooks/useRecords'
 
+// SVG layout constants
+const L = { left: 10, top: 3, right: 2, bottom: 8, width: 120, height: 44 }
+const DX = L.left, DY = L.top
+const DW = L.width - L.left - L.right   // 100
+const DH = L.height - L.top - L.bottom  // 64
+const DB = DY + DH                       // 70
+
+function computeYTicks(maxValue: number) {
+  const step = maxValue <= 500 ? 100 : maxValue <= 1000 ? 200 : maxValue <= 5000 ? 500 : 1000
+  const maxAxis = Math.max(Math.ceil(maxValue / step) * step, 700)
+  const ticks = []
+  for (let v = 0; v <= maxAxis; v += step) {
+    ticks.push({ value: v, y: DB - (v / maxAxis) * DH })
+  }
+  return { ticks, maxAxis }
+}
+
 export default function Home() {
   const { records, loading } = useRecords()
 
-  const monthlyChartData = useMemo(() => {
-    const allDates = records.map(r => r.date).sort().reverse()
-    if (allDates.length === 0) return []
-    const latestDate = new Date(allDates[0])
-    return Array.from({ length: 30 }, (_, i) => {
-      const date = subDays(latestDate, 29 - i)
-      const dateStr = format(date, 'yyyy-MM-dd')
-      const dayRecords = records.filter(r => r.date === dateStr)
-      const income = dayRecords.reduce((sum, r) => sum + r.income, 0)
-      return { date: format(date, 'M/d'), income }
+  const now = new Date()
+  const currentYear = now.getFullYear()
+  const currentMonth = now.getMonth()
+
+  const chartData = useMemo(() => {
+    const totalDays = new Date(currentYear, currentMonth + 1, 0).getDate()
+    // 一次遍历构建日期→收入映射
+    const incomeByDate = new Map<string, number>()
+    for (const r of records) {
+      incomeByDate.set(r.date, (incomeByDate.get(r.date) || 0) + r.income)
+    }
+    // 按天取值，O(总天数) 而非 O(总天数×记录数)
+    return Array.from({ length: totalDays }, (_, i) => {
+      const day = i + 1
+      const dateStr = format(new Date(currentYear, currentMonth, day), 'yyyy-MM-dd')
+      return { day, income: incomeByDate.get(dateStr) || 0 }
     })
-  }, [records])
+  }, [records, currentYear, currentMonth])
+
+  const maxIncome = useMemo(() => Math.max(...chartData.map(d => d.income), 1), [chartData])
+  const { ticks: yTicks, maxAxis } = useMemo(() => computeYTicks(maxIncome), [maxIncome])
+  const hasData = chartData.some(d => d.income > 0)
+  const totalDays = chartData.length
 
   if (loading) {
     return (
@@ -37,28 +64,46 @@ export default function Home() {
       <div className="space-y-4 md:space-y-6">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm md:text-base">30天流水趋势</CardTitle>
+            <CardTitle className="text-sm md:text-base">{currentMonth + 1}月流水</CardTitle>
           </CardHeader>
-          <CardContent className="p-2 sm:p-4">
-            {monthlyChartData.some(d => d.income > 0) ? (
-              <ResponsiveContainer width="100%" height={220}>
-                <AreaChart data={monthlyChartData} margin={{ top: 5, right: 0, left: -20, bottom: 5 }}>
-                  <defs>
-                    <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="oklch(1 0 0 / 10%)" />
-                  <XAxis dataKey="date" stroke="oklch(0.708 0 0)" tick={{ fill: 'oklch(0.708 0 0)', fontSize: 10 }} interval="preserveStartEnd" />
-                  <YAxis stroke="oklch(0.708 0 0)" tick={{ fill: 'oklch(0.708 0 0)', fontSize: 10 }} width={45} />
-                  <Tooltip contentStyle={{ backgroundColor: 'oklch(0.205 0 0)', border: '1px solid oklch(1 0 0 / 10%)', borderRadius: '8px', color: 'oklch(0.985 0 0)', fontSize: '12px' }} />
-                  <Area type="monotone" dataKey="income" stroke="#3b82f6" strokeWidth={2} fill="url(#colorIncome)" />
-                </AreaChart>
-              </ResponsiveContainer>
-            ) : (
-              <p className="text-center text-muted-foreground py-8 text-sm">暂无数据</p>
-            )}
+          <CardContent className="p-2 sm:p-4 overflow-hidden">
+            <svg viewBox={`0 0 ${L.width} ${L.height}`} className="w-full" style={{ display: 'block' }}>
+              {/* X-axis: day numbers */}
+              {chartData.map((d, i) => {
+                const margin = DW * 0.03
+                const innerW = DW - 2 * margin
+                const x = DX + margin + (i / (totalDays - 1)) * innerW
+                return (
+                  <text key={d.day} x={x} y={DB + 8} textAnchor="middle" fontSize="3" fill="#888">{d.day}</text>
+                )
+              })}
+
+              {/* Y-axis labels */}
+              {yTicks.map(t => (
+                <text key={t.value} x={DX - 2} y={t.y + 1.2} textAnchor="end" fontSize="3.5" fill="#888">¥{t.value}</text>
+              ))}
+
+              {/* Data bars */}
+              {hasData ? chartData.map(d => {
+                const barW = Math.max(DW / totalDays * 0.55, 1.2)
+                const margin = DW * 0.03
+                const innerW = DW - 2 * margin
+                const cx = DX + margin + ((d.day - 1) / (totalDays - 1)) * innerW
+                const barH = (d.income / maxAxis) * DH
+                return d.income > 0 ? (
+                  <rect key={`bar-${d.day}`} x={cx - barW / 2} y={DB - barH} width={barW} height={barH} fill="#3b82f6" rx="0.6" />
+                ) : null
+              }) : (
+                <text x={DX + DW / 2} y={DY + DH / 2} textAnchor="middle" fontSize="4" fill="#aaa">暂无数据</text>
+              )}
+              {/* Grid lines */}
+              {hasData && yTicks.map(t => (
+                <line key={`grid-${t.value}`} x1={DX} y1={t.y} x2={DX + DW} y2={t.y} stroke="#4b5563" strokeWidth="0.2" strokeDasharray="1.5,2.5" opacity="0.35" />
+              ))}
+              {/* Axis borders */}
+              <line x1={DX} y1={DY} x2={DX} y2={DB} stroke="#e5e7eb" strokeWidth="0.3" />
+              <line x1={DX} y1={DB} x2={DX + DW} y2={DB} stroke="#e5e7eb" strokeWidth="0.3" />
+            </svg>
           </CardContent>
         </Card>
 

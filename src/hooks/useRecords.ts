@@ -10,7 +10,7 @@ export function normalizeTime(time: string): string {
   cleaned = cleaned.replace(/[.\-\/]/g, ':')
   
   const parts = cleaned.split(':')
-  if (parts.length === 2) {
+  if (parts.length >= 2) {
     let hours = parseInt(parts[0], 10)
     let minutes = parseInt(parts[1], 10)
     

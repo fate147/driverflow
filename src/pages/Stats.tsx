@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addWeeks, addMonths, subDays } from 'date-fns'
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addWeeks, addMonths } from 'date-fns'
 import { TrendingUp, Clock, Wallet, Wrench, ChevronLeft, ChevronRight, Edit } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button'
@@ -9,8 +9,9 @@ import Layout from '../components/layout/Layout'
 import DistrictChart from '../components/DistrictChart'
 import StatsCharts from '../components/StatsCharts'
 import { useRecords, calculateHours } from '../hooks/useRecords'
+import type { Record } from '../types'
 
-type Period = 'week' | 'month' | 'all'
+type Period = 'week' | 'month' | 'year'
 
 export default function Stats() {
   const navigate = useNavigate()
@@ -19,31 +20,31 @@ export default function Stats() {
   const [offset, setOffset] = useState(0)
 
   const { startDate, endDate, periodLabel } = useMemo(() => {
-    const baseDate = new Date()
+    const today = new Date()
     let start: Date, end: Date, label: string
     if (period === 'week') {
-      const targetDate = addWeeks(baseDate, offset)
+      const targetDate = addWeeks(new Date(), offset)
       start = startOfWeek(targetDate, { weekStartsOn: 1 })
       end = endOfWeek(targetDate, { weekStartsOn: 1 })
       label = `${format(start, 'M/d')} - ${format(end, 'M/d')}`
     } else if (period === 'month') {
-      const targetDate = addMonths(baseDate, offset)
+      const targetDate = addMonths(today, offset)
       start = startOfMonth(targetDate)
       end = endOfMonth(targetDate)
       label = `${format(start, 'yyyy年M月')}`
     } else {
-      start = new Date(0)
-      end = new Date(8640000000000000)
-      label = '全部'
+      const year = today.getFullYear() + offset
+      start = new Date(year, 0, 1)
+      end = new Date(year, 11, 31)
+      label = `${year}年`
     }
     return { startDate: start, endDate: end, periodLabel: label }
   }, [period, offset])
 
   const filteredRecords = useMemo(() => {
-    return records.filter(r => {
-      const d = new Date(r.date)
-      return d >= startDate && d <= endDate
-    })
+    const startStr = format(startDate, 'yyyy-MM-dd')
+    const endStr = format(endDate, 'yyyy-MM-dd')
+    return records.filter(r => r.date >= startStr && r.date <= endStr)
   }, [records, startDate, endDate])
 
   const stats = useMemo(() => {
@@ -54,34 +55,61 @@ export default function Stats() {
     return { totalIncome, totalHours, totalRepairFee, avgHourlyRate }
   }, [filteredRecords])
 
-  const weeklyChartData = useMemo(() => {
-    const allDates = records.map(r => r.date).sort().reverse()
-    if (allDates.length === 0) return []
-    const latestDate = new Date(allDates[0])
-    return Array.from({ length: 7 }, (_, i) => {
-      const date = subDays(latestDate, 6 - i)
-      const dateStr = format(date, 'yyyy-MM-dd')
-      const dayRecords = records.filter(r => r.date === dateStr)
-      return { date: format(date, 'M/d'), income: dayRecords.reduce((sum, r) => sum + r.income, 0) }
-    })
-  }, [records])
+  const periodBarData = useMemo(() => {
+    if (period === 'year') {
+      // 年 → 固定12个月
+      const year = startDate.getFullYear()
+      const monthMap = new Map<string, number>()
+      for (const r of filteredRecords) {
+        const monthKey = format(new Date(r.date), 'yyyy-MM')
+        monthMap.set(monthKey, (monthMap.get(monthKey) || 0) + r.income)
+      }
+      return Array.from({ length: 12 }, (_, i) => ({
+        date: `${i + 1}月`,
+        income: monthMap.get(`${year}-${String(i + 1).padStart(2, '0')}`) || 0,
+      }))
+    }
 
-  const monthlyChartData = useMemo(() => {
-    const allDates = records.map(r => r.date).sort().reverse()
-    if (allDates.length === 0) return []
-    const latestDate = new Date(allDates[0])
-    return Array.from({ length: 30 }, (_, i) => {
-      const date = subDays(latestDate, 29 - i)
+    // 周/月 → 按日展示
+    const startStr = format(startDate, 'yyyy-MM-dd')
+    const endStr = format(endDate, 'yyyy-MM-dd')
+    const dayCount = Math.floor((endDate.getTime() - startDate.getTime()) / 86400000) + 1
+    // 一次遍历构建日期→收入映射
+    const incomeByDate = new Map<string, number>()
+    for (const r of filteredRecords) {
+      incomeByDate.set(r.date, (incomeByDate.get(r.date) || 0) + r.income)
+    }
+    return Array.from({ length: dayCount }, (_, i) => {
+      const date = new Date(startDate.getTime() + i * 86400000)
       const dateStr = format(date, 'yyyy-MM-dd')
-      const dayRecords = records.filter(r => r.date === dateStr)
-      const income = dayRecords.reduce((sum, r) => sum + r.income, 0)
-      const hours = dayRecords.reduce((sum, r) => sum + calculateHours(r.start_time, r.end_time), 0)
-      return { date: format(date, 'M/d'), income, hourlyRate: hours > 0 ? Math.round((income / hours) * 100) / 100 : 0 }
+      if (dateStr < startStr || dateStr > endStr) return { date: format(date, 'd'), income: 0 }
+      return { date: format(date, 'd'), income: incomeByDate.get(dateStr) || 0 }
     })
-  }, [records])
+  }, [period, filteredRecords, startDate, endDate])
 
+  // 年模式下按月份聚合（固定12个月），周/月按日
   const dailyData = useMemo(() => {
-    const grouped = new Map<string, { income: number; hours: number; repairFee: number; records: any[] }>()
+    if (period === 'year') {
+      const year = startDate.getFullYear()
+      const grouped = new Map<string, { income: number; hours: number; repairFee: number; records: Record[] }>()
+      for (const r of filteredRecords) {
+        const monthKey = format(new Date(r.date), 'yyyy-MM')
+        const existing = grouped.get(monthKey) || { income: 0, hours: 0, repairFee: 0, records: [] }
+        existing.income += r.income
+        existing.hours += calculateHours(r.start_time, r.end_time)
+        existing.repairFee += r.repair_fee
+        existing.records.push(r)
+        grouped.set(monthKey, existing)
+      }
+      return Array.from({ length: 12 }, (_, i) => {
+        const monthKey = `${year}-${String(i + 1).padStart(2, '0')}`
+        const data = grouped.get(monthKey) || { income: 0, hours: 0, repairFee: 0, records: [] }
+        return { date: monthKey, displayDate: `${i + 1}月`, ...data, hourlyRate: data.hours > 0 ? Math.round((data.income / data.hours) * 100) / 100 : 0 }
+      }).reverse()
+    }
+
+    // 周/月 → 按日
+    const grouped = new Map<string, { income: number; hours: number; repairFee: number; records: Record[] }>()
     for (const r of filteredRecords) {
       const existing = grouped.get(r.date) || { income: 0, hours: 0, repairFee: 0, records: [] }
       existing.income += r.income
@@ -98,7 +126,7 @@ export default function Stats() {
         ...data,
         hourlyRate: data.hours > 0 ? Math.round((data.income / data.hours) * 100) / 100 : 0,
       }))
-  }, [filteredRecords])
+  }, [period, filteredRecords])
 
   const handlePeriodChange = (newPeriod: Period) => { setPeriod(newPeriod); setOffset(0) }
   const navigatePeriod = (direction: 'prev' | 'next') => setOffset(prev => direction === 'prev' ? prev - 1 : prev + 1)
@@ -113,6 +141,8 @@ export default function Stats() {
     )
   }
 
+  const chartTitle = period === 'year' ? '年度月度汇总' : period === 'week' ? '本周每日流水' : '本月每日流水'
+
   return (
     <Layout>
       <div className="space-y-4 md:space-y-6">
@@ -121,23 +151,21 @@ export default function Stats() {
             <h2 className="text-xl md:text-2xl font-bold">数据统计</h2>
             <p className="text-muted-foreground text-xs md:text-sm">查看收入数据分析</p>
           </div>
-          {period !== 'all' && (
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" onClick={() => navigatePeriod('prev')} className="h-8 w-8">
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <span className="text-xs sm:text-sm font-medium min-w-[100px] text-center">{periodLabel}</span>
-              <Button variant="ghost" size="icon" onClick={() => navigatePeriod('next')} className="h-8 w-8">
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" onClick={() => navigatePeriod('prev')} className="h-8 w-8">
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="text-xs sm:text-sm font-medium min-w-[100px] text-center">{periodLabel}</span>
+            <Button variant="ghost" size="icon" onClick={() => navigatePeriod('next')} className="h-8 w-8">
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
         <div className="flex items-center gap-1.5 sm:gap-2">
-          {(['week', 'month', 'all'] as const).map(p => (
+          {(['week', 'month', 'year'] as const).map(p => (
             <Button key={p} variant={period === p ? 'default' : 'outline'} size="sm" onClick={() => handlePeriodChange(p)} className="text-xs sm:text-sm">
-              {p === 'week' ? '周' : p === 'month' ? '月' : '全部'}
+              {p === 'week' ? '周' : p === 'month' ? '月' : '年'}
             </Button>
           ))}
         </div>
@@ -181,26 +209,14 @@ export default function Stats() {
           </Card>
         </div>
 
-        <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+        <div className="space-y-4">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm md:text-base">近7天流水</CardTitle>
+              <CardTitle className="text-sm md:text-base">{chartTitle}</CardTitle>
             </CardHeader>
             <CardContent>
-              {weeklyChartData.some(d => d.income > 0) ? (
-                <StatsCharts data={weeklyChartData} type="bar" />
-              ) : (
-                <p className="text-center text-muted-foreground py-8 text-sm">暂无数据</p>
-              )}
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm md:text-base">近30天趋势</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {monthlyChartData.some(d => d.income > 0) ? (
-                <StatsCharts data={monthlyChartData} type="area" />
+              {periodBarData.some(d => d.income > 0) ? (
+                <StatsCharts data={periodBarData} />
               ) : (
                 <p className="text-center text-muted-foreground py-8 text-sm">暂无数据</p>
               )}
@@ -208,11 +224,11 @@ export default function Stats() {
           </Card>
         </div>
 
-        <DistrictChart records={filteredRecords} />
+        <DistrictChart records={records} />
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm md:text-base">每日数据</CardTitle>
+            <CardTitle className="text-sm md:text-base">{period === 'year' ? '每月数据' : '每日数据'}</CardTitle>
           </CardHeader>
           <CardContent>
             {dailyData.length === 0 ? (
@@ -238,7 +254,7 @@ export default function Stats() {
                           <div><p className="text-muted-foreground">修车费</p><p className="font-medium">¥{day.repairFee.toFixed(2)}</p></div>
                         </div>
                         <div className="space-y-1.5">
-                          {day.records.map((record: any) => (
+                          {day.records.map((record: Record) => (
                             <div key={record.id} className="flex items-center justify-between p-2 rounded bg-muted gap-2">
                               <div className="flex items-center gap-2 min-w-0">
                                 <span className="text-xs text-muted-foreground whitespace-nowrap">{record.start_time}-{record.end_time}</span>
@@ -277,7 +293,7 @@ export default function Stats() {
                   .map(record => (
                     <div key={record.id} className="flex items-center justify-between p-2.5 sm:p-3 rounded-lg bg-muted gap-2">
                       <div className="min-w-0">
-                        <p className="font-medium text-sm">{format(new Date(record.date), 'MM月dd日')}</p>
+                        <p className="font-medium text-sm">{format(new Date(record.date), period === 'year' ? 'M月dd日' : 'MM月dd日')}</p>
                         <p className="text-xs text-muted-foreground truncate">
                           {record.districts && record.districts.length > 0 ? record.districts.join('、') : '未选区域'}
                         </p>
