@@ -4,6 +4,7 @@ import { format } from 'date-fns'
 import { ArrowLeft, Plus } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button'
+import { Skeleton } from '../components/ui/skeleton'
 import Layout from '../components/layout/Layout'
 import { useRecords } from '../hooks/useRecords'
 
@@ -23,8 +24,9 @@ export default function Repair() {
   if (loading) {
     return (
       <Layout>
-        <div className="flex items-center justify-center h-64">
-          <div className="text-muted-foreground">加载中...</div>
+        <div className="space-y-6 max-w-xl mx-auto">
+          <Card><CardContent className="p-4 space-y-2"><Skeleton className="h-3 w-16" /><Skeleton className="h-8 w-28" /></CardContent></Card>
+          <Card><CardContent className="p-4 space-y-3"><Skeleton className="h-4 w-24" />{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}</CardContent></Card>
         </div>
       </Layout>
     )

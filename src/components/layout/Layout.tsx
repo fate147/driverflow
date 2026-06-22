@@ -24,7 +24,7 @@ export default function Layout({ children }: LayoutProps) {
 
   return (
     <div className="min-h-[100dvh] bg-background flex flex-col md:items-center md:justify-center md:p-8">
-      <div className="w-full max-w-5xl md:relative z-10 flex flex-col min-h-[100dvh] md:min-h-0 md:bg-card md:rounded-2xl md:shadow-xl md:min-h-[80vh]">
+      <div className="w-full max-w-5xl md:relative z-10 flex flex-col min-h-[100dvh] md:bg-card md:rounded-2xl md:shadow-xl md:min-h-[80vh]">
         <div className="flex items-center justify-between px-4 py-3 md:px-6 md:py-4 border-b shrink-0">
           <h1 className="text-base md:text-lg font-bold text-card-foreground">DriverFlow</h1>
           <span className="text-xs text-muted-foreground font-medium">在线</span>

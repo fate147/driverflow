@@ -9,6 +9,7 @@ import Layout from '../components/layout/Layout'
 import DistrictChart from '../components/DistrictChart'
 import StatsCharts from '../components/StatsCharts'
 import { useRecords, calculateHours } from '../hooks/useRecords'
+import { Skeleton } from '../components/ui/skeleton'
 import type { Record } from '../types'
 
 type Period = 'week' | 'month' | 'year'
@@ -104,7 +105,7 @@ export default function Stats() {
       return Array.from({ length: 12 }, (_, i) => {
         const monthKey = `${year}-${String(i + 1).padStart(2, '0')}`
         const data = grouped.get(monthKey) || { income: 0, hours: 0, repairFee: 0, records: [] }
-        return { date: monthKey, displayDate: `${i + 1}月`, ...data, hourlyRate: data.hours > 0 ? Math.round((data.income / data.hours) * 100) / 100 : 0 }
+        return { date: monthKey, displayDate: `${i + 1}月`, ...data, hourlyRate: data.hours > 0 ? Math.round(((data.income - data.repairFee) / data.hours) * 100) / 100 : 0 }
       }).reverse()
     }
 
@@ -124,7 +125,7 @@ export default function Stats() {
         date,
         displayDate: format(new Date(date), 'MM月dd日'),
         ...data,
-        hourlyRate: data.hours > 0 ? Math.round((data.income / data.hours) * 100) / 100 : 0,
+        hourlyRate: data.hours > 0 ? Math.round(((data.income - data.repairFee) / data.hours) * 100) / 100 : 0,
       }))
   }, [period, filteredRecords])
 
@@ -134,8 +135,14 @@ export default function Stats() {
   if (loading) {
     return (
       <Layout>
-        <div className="flex items-center justify-center h-64">
-          <div className="text-muted-foreground">加载中...</div>
+        <div className="space-y-4 md:space-y-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Card key={i}><CardContent className="p-4 space-y-2"><Skeleton className="h-3 w-16" /><Skeleton className="h-6 w-24" /></CardContent></Card>
+            ))}
+          </div>
+          <Card><CardContent className="p-4"><Skeleton className="h-48 w-full" /></CardContent></Card>
+          <Card><CardContent className="p-4"><Skeleton className="h-32 w-full" /></CardContent></Card>
         </div>
       </Layout>
     )
@@ -232,7 +239,7 @@ export default function Stats() {
           </CardHeader>
           <CardContent>
             {dailyData.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8 text-sm">该周期暂无数据</p>
+              <p className="text-center text-muted-foreground py-8 text-sm">该周期暂无记录，去首页新增一条吧</p>
             ) : (
               <Accordion>
                 {dailyData.map((day) => (
