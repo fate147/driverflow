@@ -51,7 +51,7 @@ export default function StatsCharts({ data }: StatsChartsProps) {
 
         {/* Y-axis labels */}
         {yTicks.map(t => (
-          <text key={t.value} x={DX - 2} y={t.y + 1.2} textAnchor="end" fontSize="3.5" fill="#888">¥{t.value}</text>
+          <text key={t.value} x={DX - 2} y={t.y + 1.2} textAnchor="end" fontSize="3.5" fill="#a3a3a3">¥{t.value}</text>
         ))}
 
         {/* X-axis labels (间隔显示避免过密) */}
@@ -64,7 +64,7 @@ export default function StatsCharts({ data }: StatsChartsProps) {
           const innerW = DW - 2 * margin
           const x = DX + margin + (i / (count - 1 || 1)) * innerW
           return (
-            <text key={i} x={x} y={DB + 8} textAnchor="middle" fontSize="3" fill="#888">{d.date}</text>
+            <text key={i} x={x} y={DB + 8} textAnchor="middle" fontSize="3" fill="#a3a3a3">{d.date}</text>
           )
         })}
 
@@ -117,7 +117,7 @@ export default function StatsCharts({ data }: StatsChartsProps) {
             </>
           )
         })() : (
-          <text x={DX + DW / 2} y={DY + DH / 2} textAnchor="middle" fontSize="4" fill="#aaa">该周期暂无记录</text>
+          <text x={DX + DW / 2} y={DY + DH / 2} textAnchor="middle" fontSize="4" fill="#a3a3a3">该周期暂无记录</text>
         )}
 
         {/* Grid lines */}

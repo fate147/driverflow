@@ -1,15 +1,16 @@
 import { useState, createContext, useContext, ReactNode } from 'react'
-import { X, CheckCircle } from 'lucide-react'
+import { X, CheckCircle, AlertCircle } from 'lucide-react'
 import { cn } from '../../lib/utils'
 
 interface Toast {
   id: string
   message: string
   type?: 'success' | 'error' | 'info'
+  action?: { label: string; onClick: () => void }
 }
 
 interface ToastContextType {
-  toast: (message: string, type?: 'success' | 'error' | 'info') => void
+  toast: (message: string, type?: 'success' | 'error' | 'info', action?: { label: string; onClick: () => void }) => void
 }
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined)
@@ -25,12 +26,12 @@ export function useToast() {
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([])
 
-  const addToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
+  const addToast = (message: string, type: 'success' | 'error' | 'info' = 'success', action?: { label: string; onClick: () => void }) => {
     const id = Date.now().toString()
-    setToasts(prev => [...prev, { id, message, type }])
+    setToasts(prev => [...prev, { id, message, type, action }])
     setTimeout(() => {
       setToasts(prev => prev.filter(t => t.id !== id))
-    }, 3000)
+    }, 5000)
   }
 
   const removeToast = (id: string) => {
@@ -49,13 +50,24 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               "bg-card border text-card-foreground min-w-[280px]"
             )}
           >
-            <CheckCircle className={cn(
-              "h-4 w-4 flex-shrink-0",
-              toast.type === 'success' && "text-green-500",
-              toast.type === 'error' && "text-destructive",
-              toast.type === 'info' && "text-blue-500"
-            )} />
+            {toast.type === 'error' ? (
+              <AlertCircle className="h-4 w-4 flex-shrink-0 text-destructive" />
+            ) : (
+              <CheckCircle className={cn(
+                "h-4 w-4 flex-shrink-0",
+                toast.type === 'success' && "text-green-500",
+                toast.type === 'info' && "text-blue-500"
+              )} />
+            )}
             <span className="text-sm font-medium flex-1">{toast.message}</span>
+            {toast.action && (
+              <button
+                onClick={() => { toast.action!.onClick(); removeToast(toast.id) }}
+                className="text-xs font-medium text-primary hover:underline flex-shrink-0"
+              >
+                {toast.action.label}
+              </button>
+            )}
             <button
               onClick={() => removeToast(toast.id)}
               className="text-muted-foreground hover:text-foreground transition-colors"

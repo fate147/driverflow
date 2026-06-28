@@ -1,11 +1,12 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { supabase } from './lib/supabase'
-import { useEffect, useState } from 'react'
-import Login from './pages/Login'
-import Home from './pages/Home'
-import RecordPage from './pages/Record'
-import Stats from './pages/Stats'
-import Repair from './pages/Repair'
+import { useEffect, useState, lazy, Suspense } from 'react'
+
+const Login = lazy(() => import('./pages/Login'))
+const Home = lazy(() => import('./pages/Home'))
+const RecordPage = lazy(() => import('./pages/Record'))
+const Stats = lazy(() => import('./pages/Stats'))
+const Repair = lazy(() => import('./pages/Repair'))
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const [authenticated, setAuthenticated] = useState<boolean | null>(null)
@@ -41,7 +42,12 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function App() {
   return (
-    <Routes>
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-muted-foreground">加载中...</div>
+      </div>
+    }>
+      <Routes>
       <Route path="/login" element={<Login />} />
       <Route
         path="/"
@@ -84,6 +90,7 @@ function App() {
         }
       />
     </Routes>
+    </Suspense>
   )
 }
 

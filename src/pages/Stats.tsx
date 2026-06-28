@@ -1,9 +1,10 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addWeeks, addMonths } from 'date-fns'
-import { TrendingUp, Clock, Wallet, Wrench, ChevronLeft, ChevronRight, Edit } from 'lucide-react'
+import { TrendingUp, Clock, Wallet, Wrench, ChevronLeft, ChevronRight, Edit, Plus, Search, Download } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button'
+import { Input } from '../components/ui/input'
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '../components/ui/accordion'
 import Layout from '../components/layout/Layout'
 import DistrictChart from '../components/DistrictChart'
@@ -19,6 +20,7 @@ export default function Stats() {
   const { records, loading } = useRecords()
   const [period, setPeriod] = useState<Period>('month')
   const [offset, setOffset] = useState(0)
+  const [recordSearch, setRecordSearch] = useState('')
 
   const { startDate, endDate, periodLabel } = useMemo(() => {
     const today = new Date()
@@ -129,8 +131,41 @@ export default function Stats() {
       }))
   }, [period, filteredRecords])
 
+  const filteredDailyData = useMemo(() => {
+    if (!recordSearch.trim()) return dailyData
+    const q = recordSearch.trim().toLowerCase()
+    return dailyData.filter(day =>
+      day.displayDate.toLowerCase().includes(q) ||
+      day.records.some(r =>
+        r.start_time.includes(q) || r.end_time.includes(q) ||
+        (r.districts && r.districts.some(d => d.toLowerCase().includes(q)))
+      )
+    )
+  }, [dailyData, recordSearch])
+
   const handlePeriodChange = (newPeriod: Period) => { setPeriod(newPeriod); setOffset(0) }
   const navigatePeriod = (direction: 'prev' | 'next') => setOffset(prev => direction === 'prev' ? prev - 1 : prev + 1)
+
+  const exportCSV = () => {
+    const headers = ['日期', '出车时间', '收车时间', '流水(元)', '时薪(元/时)', '修车费(元)', '区域']
+    const rows = filteredRecords.map(r => [
+      r.date,
+      r.start_time,
+      r.end_time,
+      r.income.toFixed(2),
+      (calculateHours(r.start_time, r.end_time) > 0 ? ((r.income - r.repair_fee) / calculateHours(r.start_time, r.end_time)).toFixed(2) : '0'),
+      r.repair_fee.toFixed(2),
+      (r.districts || []).join('/')
+    ])
+    const csv = [headers, ...rows].map(row => row.join(',')).join('\n')
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `driverflow-${periodLabel}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
 
   if (loading) {
     return (
@@ -159,6 +194,10 @@ export default function Stats() {
             <p className="text-muted-foreground text-xs md:text-sm">查看收入数据分析</p>
           </div>
           <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={exportCSV} className="text-xs">
+              <Download className="h-3.5 w-3.5 mr-1" />
+              导出
+            </Button>
             <Button variant="ghost" size="icon" onClick={() => navigatePeriod('prev')} className="h-8 w-8">
               <ChevronLeft className="h-4 w-4" />
             </Button>
@@ -178,13 +217,13 @@ export default function Stats() {
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-          <Card>
+          <Card className="bg-primary/5 border-primary/15">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">总流水</CardTitle>
-              <Wallet className="h-4 w-4 text-blue-500" />
+              <CardTitle className="text-xs sm:text-sm font-medium text-primary/70">总流水</CardTitle>
+              <Wallet className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent className="p-3 sm:p-6">
-              <div className="text-lg sm:text-2xl font-bold">¥{stats.totalIncome.toFixed(2)}</div>
+              <div className="text-xl sm:text-3xl font-black text-primary tracking-tight">¥{stats.totalIncome.toFixed(2)}</div>
             </CardContent>
           </Card>
           <Card>
@@ -208,10 +247,10 @@ export default function Stats() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">修车费</CardTitle>
-              <Wrench className="h-4 w-4 text-blue-500" />
+              <Wrench className="h-4 w-4 text-orange" />
             </CardHeader>
             <CardContent className="p-3 sm:p-6">
-              <div className="text-lg sm:text-2xl font-bold">¥{stats.totalRepairFee.toFixed(2)}</div>
+              <div className="text-lg sm:text-2xl font-bold text-orange">¥{stats.totalRepairFee.toFixed(2)}</div>
             </CardContent>
           </Card>
         </div>
@@ -225,7 +264,13 @@ export default function Stats() {
               {periodBarData.some(d => d.income > 0) ? (
                 <StatsCharts data={periodBarData} />
               ) : (
-                <p className="text-center text-muted-foreground py-8 text-sm">暂无数据</p>
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <p className="text-muted-foreground text-sm mb-3">暂无数据</p>
+                  <Button size="sm" variant="outline" onClick={() => navigate('/record')}>
+                    <Plus className="h-4 w-4 mr-1" />
+                    添加记录
+                  </Button>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -239,10 +284,26 @@ export default function Stats() {
           </CardHeader>
           <CardContent>
             {dailyData.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8 text-sm">该周期暂无记录，去首页新增一条吧</p>
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <p className="text-muted-foreground text-sm mb-3">该周期暂无记录</p>
+                <Button size="sm" variant="outline" onClick={() => navigate('/record')}>
+                  <Plus className="h-4 w-4 mr-1" />
+                  添加记录
+                </Button>
+              </div>
             ) : (
-              <Accordion>
-                {dailyData.map((day) => (
+              <>
+                <div className="relative mb-3">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                  <Input
+                    placeholder="搜索日期、时间、区域..."
+                    value={recordSearch}
+                    onChange={(e) => setRecordSearch(e.target.value)}
+                    className="pl-9 h-8 text-xs"
+                  />
+                </div>
+                <Accordion>
+                  {filteredDailyData.map((day) => (
                   <AccordionItem key={day.date} value={day.date}>
                     <AccordionTrigger>
                       <div className="flex items-center justify-between w-full gap-2">
@@ -258,7 +319,7 @@ export default function Stats() {
                         <div className="grid grid-cols-3 gap-2 sm:gap-4 text-xs sm:text-sm">
                           <div><p className="text-muted-foreground">时长</p><p className="font-medium">{day.hours.toFixed(1)}h</p></div>
                           <div><p className="text-muted-foreground">时薪</p><p className="font-medium">¥{day.hourlyRate.toFixed(2)}</p></div>
-                          <div><p className="text-muted-foreground">修车费</p><p className="font-medium">¥{day.repairFee.toFixed(2)}</p></div>
+                          <div><p className="text-muted-foreground">修车费</p><p className={`font-medium ${day.repairFee > 0 ? 'text-orange' : ''}`}>¥{day.repairFee.toFixed(2)}</p></div>
                         </div>
                         <div className="space-y-1.5">
                           {day.records.map((record: Record) => (
@@ -277,7 +338,11 @@ export default function Stats() {
                     </AccordionContent>
                   </AccordionItem>
                 ))}
-              </Accordion>
+                </Accordion>
+                {filteredDailyData.length === 0 && recordSearch && (
+                  <p className="text-center text-muted-foreground py-6 text-sm">无匹配记录</p>
+                )}
+              </>
             )}
           </CardContent>
         </Card>

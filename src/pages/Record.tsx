@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Trash2, AlertCircle } from 'lucide-react'
 import Layout from '../components/layout/Layout'
@@ -25,8 +25,15 @@ export default function RecordPage() {
     repair_fee: '0',
   })
   const [selectedDistricts, setSelectedDistricts] = useState<string[]>([])
+  const [districtSearch, setDistrictSearch] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+
+  const filteredDistricts = useMemo(() => {
+    if (!districtSearch.trim()) return DISTRICTS
+    const q = districtSearch.trim().toLowerCase()
+    return DISTRICTS.filter(d => d.toLowerCase().includes(q))
+  }, [districtSearch])
 
   useEffect(() => {
     if (isEdit && records.length > 0) {
@@ -49,48 +56,56 @@ export default function RecordPage() {
   const repairNum = parseFloat(form.repair_fee) || 0
   const hourlyRate = hours > 0 ? Math.round(((incomeNum - repairNum) / hours) * 100) / 100 : 0
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!form.income || !form.start_time || !form.end_time) return
+  const doSubmit = async () => {
     const normalizedStart = normalizeTime(form.start_time)
     const normalizedEnd = normalizeTime(form.end_time)
     if (!normalizedStart || !normalizedEnd) {
       toast('请输入有效的时间格式（如 7:30 或 07.30）', 'error')
       return
     }
+    const payload = {
+      date: form.date,
+      income: parseFloat(form.income),
+      start_time: normalizedStart,
+      end_time: normalizedEnd,
+      repair_fee: parseFloat(form.repair_fee) || 0,
+      districts: selectedDistricts,
+    }
+    if (isEdit && id) {
+      await updateRecord(id, payload)
+      toast('记录已更新', 'success')
+    } else {
+      await addRecord(payload)
+      toast('记录已添加', 'success')
+    }
+    navigate('/')
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!form.income || !form.start_time || !form.end_time) return
     setSubmitting(true)
     try {
-      const payload = {
-        date: form.date,
-        income: parseFloat(form.income),
-        start_time: normalizedStart,
-        end_time: normalizedEnd,
-        repair_fee: parseFloat(form.repair_fee) || 0,
-        districts: selectedDistricts,
-      }
-      if (isEdit && id) {
-        await updateRecord(id, payload)
-        toast('记录已更新', 'success')
-      } else {
-        await addRecord(payload)
-        toast('记录已添加', 'success')
-      }
-      navigate('/')
+      await doSubmit()
     } catch {
-      toast('保存失败', 'error')
+      toast('保存失败，网络可能不稳定', 'error', { label: '重试', onClick: doSubmit })
     } finally {
       setSubmitting(false)
     }
   }
 
-  const handleDelete = async () => {
+  const doDelete = async () => {
     if (!id) return
+    await deleteRecord(id)
+    toast('记录已删除', 'success')
+    navigate('/')
+  }
+
+  const handleDelete = async () => {
     try {
-      await deleteRecord(id)
-      toast('记录已删除', 'success')
-      navigate('/')
+      await doDelete()
     } catch {
-      toast('删除失败', 'error')
+      toast('删除失败，网络可能不稳定', 'error', { label: '重试', onClick: doDelete })
     }
   }
 
@@ -155,12 +170,21 @@ export default function RecordPage() {
                     {selectedDistricts.length === DISTRICTS.length ? '取消全选' : '全选'}
                   </button>
                 </div>
+                <Input
+                  placeholder="搜索区域..."
+                  value={districtSearch}
+                  onChange={(e) => setDistrictSearch(e.target.value)}
+                  className="h-8 text-xs"
+                />
                 <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                  {DISTRICTS.map(district => (
+                  {filteredDistricts.map(district => (
                     <button key={district} type="button" onClick={() => toggleDistrict(district)} className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded text-xs sm:text-sm font-medium transition-colors ${selectedDistricts.includes(district) ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
                       {district}
                     </button>
                   ))}
+                  {filteredDistricts.length === 0 && (
+                    <p className="text-xs text-muted-foreground">无匹配区域</p>
+                  )}
                 </div>
                 {selectedDistricts.length > 0 && (
                   <p className="text-[10px] sm:text-xs text-muted-foreground">已选：{selectedDistricts.join('、')}</p>

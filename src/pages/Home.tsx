@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { format } from 'date-fns'
-import { Wallet, CalendarDays, TrendingUp } from 'lucide-react'
+import { Wallet, CalendarDays, TrendingUp, Plus } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
+import { Button } from '../components/ui/button'
 import { Skeleton } from '../components/ui/skeleton'
 import Layout from '../components/layout/Layout'
 import DistrictChart from '../components/DistrictChart'
@@ -27,6 +29,7 @@ function computeYTicks(maxValue: number) {
 }
 
 export default function Home() {
+  const navigate = useNavigate()
   const { records, loading } = useRecords()
 
   const now = new Date()
@@ -87,19 +90,19 @@ export default function Home() {
     <Layout>
       <div className="space-y-4 md:space-y-6">
         {/* 本月摘要 */}
-        <div className="grid grid-cols-3 gap-3">
-          <Card>
-            <CardContent className="p-3 sm:p-4">
-              <div className="flex items-center gap-1.5 text-muted-foreground mb-1">
-                <Wallet className="h-3.5 w-3.5" />
-                <span className="text-xs">本月流水</span>
+        <div className="grid grid-cols-[1.4fr_1fr_1fr] gap-3">
+          <Card className="bg-primary/10 border-primary/20">
+            <CardContent className="p-4 sm:p-5">
+              <div className="flex items-center gap-1.5 text-primary/70 mb-2">
+                <Wallet className="h-4 w-4" />
+                <span className="text-xs font-medium">本月流水</span>
               </div>
-              <div className="text-lg sm:text-xl font-bold">¥{monthlyStats.totalIncome.toFixed(0)}</div>
+              <div className="text-3xl sm:text-4xl font-black text-primary tracking-tight">¥{monthlyStats.totalIncome.toFixed(0)}</div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-3 sm:p-4">
-              <div className="flex items-center gap-1.5 text-muted-foreground mb-1">
+              <div className="flex items-center gap-1.5 text-muted-foreground mb-1.5">
                 <CalendarDays className="h-3.5 w-3.5" />
                 <span className="text-xs">出车天数</span>
               </div>
@@ -108,7 +111,7 @@ export default function Home() {
           </Card>
           <Card>
             <CardContent className="p-3 sm:p-4">
-              <div className="flex items-center gap-1.5 text-muted-foreground mb-1">
+              <div className="flex items-center gap-1.5 text-muted-foreground mb-1.5">
                 <TrendingUp className="h-3.5 w-3.5" />
                 <span className="text-xs">时薪</span>
               </div>
@@ -141,13 +144,13 @@ export default function Home() {
                   const innerW = DW - 2 * margin
                   const x = DX + margin + (i / (totalDays - 1)) * innerW
                   return (
-                    <text key={d.day} x={x} y={DB + 8} textAnchor="middle" fontSize="3" fill="#888">{d.day}</text>
+                    <text key={d.day} x={x} y={DB + 8} textAnchor="middle" fontSize="3" fill="#a3a3a3">{d.day}</text>
                   )
                 })}
 
                 {/* Y-axis labels */}
                 {yTicks.map(t => (
-                  <text key={t.value} x={DX - 2} y={t.y + 1.2} textAnchor="end" fontSize="3.5" fill="#888">¥{t.value}</text>
+                  <text key={t.value} x={DX - 2} y={t.y + 1.2} textAnchor="end" fontSize="3.5" fill="#a3a3a3">¥{t.value}</text>
                 ))}
 
                 {/* Area chart */}
@@ -210,7 +213,11 @@ export default function Home() {
               <div className="flex flex-col items-center justify-center py-12 text-center">
                 <Wallet className="h-8 w-8 text-muted-foreground/40 mb-2" />
                 <p className="text-sm text-muted-foreground">本月暂无流水记录</p>
-                <p className="text-xs text-muted-foreground/60 mt-1">点击底部 + 号添加你的第一笔记录</p>
+                <p className="text-xs text-muted-foreground/60 mt-1 mb-4">添加你的第一笔记录，开始追踪收入</p>
+                <Button size="sm" onClick={() => navigate('/record')}>
+                  <Plus className="h-4 w-4 mr-1" />
+                  立即记录
+                </Button>
               </div>
             )}
 
