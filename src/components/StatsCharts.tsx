@@ -10,12 +10,11 @@ interface StatsChartsProps {
   data: ChartData[]
 }
 
-// SVG layout — same coordinate system as Home.tsx
 const L = { left: 10, top: 4, right: 2, bottom: 10, width: 120, height: 40 }
 const DX = L.left, DY = L.top
-const DW = L.width - L.left - L.right   // 100
-const DH = L.height - L.top - L.bottom  // 64
-const DB = DY + DH                       // 70
+const DW = L.width - L.left - L.right
+const DH = L.height - L.top - L.bottom
+const DB = DY + DH
 
 function computeYTicks(maxValue: number) {
   const step = maxValue <= 1000 ? 200 : maxValue <= 5000 ? 500 : 2000
@@ -36,25 +35,31 @@ export default function StatsCharts({ data }: StatsChartsProps) {
   const count = data.length
 
   if (count === 0) {
-    return <p className="text-center text-muted-foreground py-8 text-sm">该周期暂无记录，去首页新增一条吧</p>
+    return (
+      <p style={{
+        textAlign: 'center',
+        color: 'var(--c-text-secondary)',
+        padding: 'var(--space-8) 0',
+        fontSize: 'var(--font-size-sm)',
+        margin: 0,
+      }}>该周期暂无记录，去首页新增一条吧</p>
+    )
   }
 
   return (
-    <div className="w-full">
-      <svg viewBox={`0 0 ${L.width} ${L.height}`} className="w-full" style={{ display: 'block' }}>
+    <div style={{ width: '100%' }}>
+      <svg viewBox={`0 0 ${L.width} ${L.height}`} style={{ width: '100%', display: 'block' }}>
         <defs>
           <linearGradient id="areaGradientStats" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.3" />
-            <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.04" />
+            <stop offset="0%" stopColor="var(--c-primary)" stopOpacity="0.3" />
+            <stop offset="100%" stopColor="var(--c-primary)" stopOpacity="0.04" />
           </linearGradient>
         </defs>
 
-        {/* Y-axis labels */}
         {yTicks.map(t => (
-          <text key={t.value} x={DX - 2} y={t.y + 1.2} textAnchor="end" fontSize="3.5" fill="#a3a3a3">¥{t.value}</text>
+          <text key={t.value} x={DX - 2} y={t.y + 1.2} textAnchor="end" fontSize="3.5" style={{ fill: 'var(--c-text-muted)' }}>¥{t.value}</text>
         ))}
 
-        {/* X-axis labels (间隔显示避免过密) */}
         {data.filter((_, i) => {
           const labelInterval = count > 15 ? Math.ceil(count / 6) : 1
           return i % labelInterval === 0 || i === count - 1
@@ -64,11 +69,10 @@ export default function StatsCharts({ data }: StatsChartsProps) {
           const innerW = DW - 2 * margin
           const x = DX + margin + (i / (count - 1 || 1)) * innerW
           return (
-            <text key={i} x={x} y={DB + 8} textAnchor="middle" fontSize="3" fill="#a3a3a3">{d.date}</text>
+            <text key={i} x={x} y={DB + 8} textAnchor="middle" fontSize="3" style={{ fill: 'var(--c-text-muted)' }}>{d.date}</text>
           )
         })}
 
-        {/* Area chart */}
         {hasData ? (() => {
           const margin = DW * 0.06
           const innerW = DW - 2 * margin
@@ -80,20 +84,18 @@ export default function StatsCharts({ data }: StatsChartsProps) {
           return (
             <>
               <path d={pathD} fill="url(#areaGradientStats)" />
-              <path d={polylinePath(points)} fill="none" stroke="#3b82f6" strokeWidth="0.4" strokeLinejoin="round" strokeOpacity="0.7" />
-              {/* Hover indicator */}
+              <path d={polylinePath(points)} fill="none" style={{ stroke: 'var(--c-primary)' }} strokeWidth="0.4" strokeLinejoin="round" strokeOpacity="0.7" />
               {tooltip && (() => {
                 const idx = data.findIndex(d => d.date === tooltip.date)
                 const cx = DX + margin + (idx / (count - 1 || 1)) * innerW
                 const cy = DB - (tooltip.income / maxAxis) * DH
                 return (
                   <>
-                    <line x1={cx} y1={DY} x2={cx} y2={DB} stroke="#3b82f6" strokeWidth="0.3" strokeDasharray="1.5,2.5" opacity="0.5" />
-                    <circle cx={cx} cy={cy} r="1.2" fill="#3b82f6" stroke="#fff" strokeWidth="0.4" />
+                    <line x1={cx} y1={DY} x2={cx} y2={DB} style={{ stroke: 'var(--c-primary)' }} strokeWidth="0.3" strokeDasharray="1.5,2.5" opacity="0.5" />
+                    <circle cx={cx} cy={cy} r="1.2" style={{ fill: 'var(--c-primary)', stroke: 'var(--c-bg)' }} strokeWidth="0.4" />
                   </>
                 )
               })()}
-              {/* Hit targets for tooltip */}
               {data.map((d, i) => {
                 const hitW = Math.max(DW / count, 3)
                 const cx = DX + margin + (i / (count - 1 || 1)) * innerW
@@ -117,24 +119,31 @@ export default function StatsCharts({ data }: StatsChartsProps) {
             </>
           )
         })() : (
-          <text x={DX + DW / 2} y={DY + DH / 2} textAnchor="middle" fontSize="4" fill="#a3a3a3">该周期暂无记录</text>
+          <text x={DX + DW / 2} y={DY + DH / 2} textAnchor="middle" fontSize="4" style={{ fill: 'var(--c-text-muted)' }}>该周期暂无记录</text>
         )}
 
-        {/* Grid lines */}
         {hasData && yTicks.map(t => (
-          <line key={`grid-${t.value}`} x1={DX} y1={t.y} x2={DX + DW} y2={t.y} stroke="#4b5563" strokeWidth="0.2" strokeDasharray="1.5,2.5" opacity="0.35" />
+          <line key={`grid-${t.value}`} x1={DX} y1={t.y} x2={DX + DW} y2={t.y} style={{ stroke: 'var(--c-border)' }} strokeWidth="0.2" strokeDasharray="1.5,2.5" opacity="0.35" />
         ))}
 
-        {/* Axis borders */}
-        <line x1={DX} y1={DY} x2={DX} y2={DB} stroke="#e5e7eb" strokeWidth="0.3" />
-        <line x1={DX} y1={DB} x2={DX + DW} y2={DB} stroke="#e5e7eb" strokeWidth="0.3" />
+        <line x1={DX} y1={DY} x2={DX} y2={DB} style={{ stroke: 'var(--c-border)' }} strokeWidth="0.3" />
+        <line x1={DX} y1={DB} x2={DX + DW} y2={DB} style={{ stroke: 'var(--c-border)' }} strokeWidth="0.3" />
       </svg>
 
-      {/* Tooltip */}
       {tooltip && (
         <div
-          className="fixed z-50 px-2 py-1.5 rounded-lg bg-foreground text-background text-xs font-medium shadow-lg pointer-events-none whitespace-nowrap"
           style={{
+            position: 'fixed',
+            zIndex: 50,
+            padding: 'var(--space-1) var(--space-2)',
+            borderRadius: 'var(--radius-md)',
+            background: 'var(--c-text)',
+            color: 'var(--c-bg)',
+            fontSize: 'var(--font-size-xs)',
+            fontWeight: 'var(--font-weight-medium)',
+            boxShadow: 'var(--shadow-lg)',
+            pointerEvents: 'none',
+            whiteSpace: 'nowrap',
             left: tooltip.x,
             top: tooltip.y - 8,
             transform: 'translate(-50%, -100%)',

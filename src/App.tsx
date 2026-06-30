@@ -27,8 +27,14 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (authenticated === null) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-muted">加载中...</div>
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'var(--c-bg)',
+      }}>
+        <div style={{ color: 'var(--c-text-secondary)' }}>加载中...</div>
       </div>
     )
   }
@@ -43,8 +49,14 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 function App() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-muted-foreground">加载中...</div>
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'var(--c-bg)',
+      }}>
+        <div style={{ color: 'var(--c-text-secondary)' }}>加载中...</div>
       </div>
     }>
       <Routes>

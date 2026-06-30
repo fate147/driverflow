@@ -1,10 +1,3 @@
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
-
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
-}
-
 /** 生成面积图的 SVG path（直连线段 + 闭合底部，干净不过冲） */
 export function smoothAreaPath(
   points: { x: number; y: number }[],

@@ -11,11 +11,3 @@ export interface Record {
   created_at: string
   updated_at: string
 }
-
-export interface DailySummary {
-  date: string
-  totalIncome: number
-  totalHours: number
-  avgHourlyRate: number
-  totalRepairFee: number
-}

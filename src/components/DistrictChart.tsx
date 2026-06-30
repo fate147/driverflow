@@ -1,5 +1,4 @@
 import { useMemo } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { MapPin } from 'lucide-react'
 import { DISTRICTS } from '../lib/constants'
 import type { Record } from '../types'
@@ -7,8 +6,6 @@ import type { Record } from '../types'
 interface DistrictChartProps {
   records: Record[]
 }
-
-const BAR_COLORS = ['#3b82f6', '#2563eb', '#1d4ed8', '#60a5fa', '#93c5fd', '#bfdbfe', '#3b82f6', '#2563eb', '#1d4ed8', '#60a5fa']
 
 export default function DistrictChart({ records }: DistrictChartProps) {
   const chartData = useMemo(() => {
@@ -20,7 +17,7 @@ export default function DistrictChart({ records }: DistrictChartProps) {
       return {
         district: d,
         days: daySet.size,
-        color: BAR_COLORS[i % BAR_COLORS.length],
+        opacity: 1 - (i * 0.08),
       }
     }).sort((a, b) => b.days - a.days)
     const maxDays = Math.max(...data.map(d => d.days), 1)
@@ -28,38 +25,67 @@ export default function DistrictChart({ records }: DistrictChartProps) {
   }, [records])
 
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="flex items-center gap-2 text-sm md:text-base">
-          <MapPin className="h-4 w-4" />
+    <div className="card">
+      <div className="card-header" style={{ paddingBottom: 'var(--space-2)' }}>
+        <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', fontSize: 'var(--font-size-sm)' }}>
+          <MapPin style={{ width: '16px', height: '16px' }} />
           跑车区域统计
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="p-2 sm:p-4">
+        </div>
+      </div>
+      <div className="card-content" style={{ padding: 'var(--space-2) var(--space-4)' }}>
         {chartData.length > 0 ? (
-          <div className="space-y-2">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
             {chartData.map((item) => (
-              <div key={item.district} className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground w-16 shrink-0 truncate" title={item.district}>
+              <div key={item.district} style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                <span style={{
+                  fontSize: 'var(--font-size-xs)',
+                  color: 'var(--c-text-secondary)',
+                  width: '64px',
+                  flexShrink: 0,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }} title={item.district}>
                   {item.district}
                 </span>
-                <div className="flex-1 h-5 bg-muted rounded overflow-hidden">
+                <div style={{
+                  flex: 1,
+                  height: '20px',
+                  background: 'var(--c-bg-secondary)',
+                  borderRadius: 'var(--radius-sm)',
+                  overflow: 'hidden',
+                }}>
                   <div
-                    className="h-full rounded transition-all duration-300"
                     style={{
+                      height: '100%',
+                      borderRadius: 'var(--radius-sm)',
+                      transition: 'all 300ms ease',
                       width: `${Math.max(item.ratio * 100, 4)}%`,
-                      backgroundColor: item.color,
+                      background: 'var(--c-primary)',
+                      opacity: item.opacity,
                     }}
                   />
                 </div>
-                <span className="text-xs font-medium w-8 text-right shrink-0">{item.days}</span>
+                <span style={{
+                  fontSize: 'var(--font-size-xs)',
+                  fontWeight: 'var(--font-weight-medium)',
+                  width: '32px',
+                  textAlign: 'right',
+                  flexShrink: 0,
+                }}>{item.days}</span>
               </div>
             ))}
           </div>
         ) : (
-          <p className="text-center text-muted-foreground py-8 text-sm">暂无区域数据</p>
+          <p style={{
+            textAlign: 'center',
+            color: 'var(--c-text-secondary)',
+            padding: 'var(--space-8) 0',
+            fontSize: 'var(--font-size-sm)',
+            margin: 0,
+          }}>暂无区域数据</p>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }
